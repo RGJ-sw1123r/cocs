@@ -1,0 +1,206 @@
+<!--
+	File Name: SAA060.html
+	Description: 공통코드
+-->
+<script>
+	var viewX = {
+		grid_01: {}, grid_02: {}, grid_03: {},
+		gridData_01: {}, gridData_02: {}, gridData_03: {},
+		TAB_PROPERTIES: [
+			{ id: '0', pid: '-1', order: '1', text: '구분', targetid: 'tab_01' },
+			{ id: '1', pid: '-1', order: '2', text: '대분류', targetid: 'tab_02' },
+			{ id: '2', pid: '-1', order: '3', text: '소분류', targetid: 'tab_03' }
+		],
+		getGridVariables: function(tabName) {
+			var index = tabName ? tabName.split('_')[1] : '01';
+			var dataVar = 'gridData_' + index;
+			var datagridVar = 'grid_' + index;
+			return {
+				dataVar: dataVar,
+				datagridVar: datagridVar
+			}
+		},
+		moveTab: function(tabName) {
+			this.loadGridData(tabName.toLowerCase(), false);
+		},
+		loadGridData: function(tabName, showAlert) {
+			var variables = viewX.getGridVariables(tabName);
+			var url = '/api/SAA060/' + tabName + '/gridData';
+			
+			viewX[variables.datagridVar].lockGrid(true);
+			exios.get(url, {}).then((response) => {
+				const resultData = response.data;
+				viewX[variables.dataVar] = resultData;
+				viewX[variables.datagridVar].setGridData(viewX[variables.dataVar], true);
+				korbiztech.gridAction.disablePrimaryKeyCells(variables.datagridVar);
+				if (showAlert !== false) {
+					korbiztech.alert('MSG_GRID_GET_SUCCESS');
+				}
+				viewX[variables.datagridVar].lockGrid(false);
+			}).catch((e) => {
+				korbiztech.alert('MSG_GRID_GET_FAIL');
+				viewX[variables.datagridVar].lockGrid(false);
+			});
+		},
+		saveGridData: function(tabName) {
+			var variables = viewX.getGridVariables(tabName);
+			var url = '/api/SAA060/' + tabName + '/gridData';
+	
+			var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+			var checkData = JSON.parse(sendData);
+			
+			var performSave = async function() {
+				viewX[variables.datagridVar].lockGrid(true);
+				try {
+					const response = await exios.put(url, sendData);
+					korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+					viewX[variables.datagridVar].clearStatus();
+					viewX.loadGridData(tabName, false);
+				} catch (e) {
+					korbiztech.alert('MSG_GRID_SAVE_FAIL');
+					console.error(e);
+				} finally {
+					viewX[variables.datagridVar].lockGrid(false);
+				}
+			};
+	
+			if (checkData.length > 0) {
+				var primarykey = viewX[variables.datagridVar].primarykey;
+				if (primarykey.length === 1) {
+					if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+				} else if (primarykey.length > 1) {
+					if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+				} else {
+					korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+					return;
+				}
+				performSave();
+			} else {
+				korbiztech.alert('MSG_GRID_NO_CHANGES');
+			}
+		}
+	};
+
+	$(function() {
+		var GRID_PROPERTIES = {
+			tab_01: {
+				parentid: 'SBGridArea_01',
+				id: 'viewX.grid_01',
+				jsonref: 'viewX.gridData_01',
+				backcoloralternate: '#F8F8F8',
+				rowheight: '30',
+				rowheader: ['update','seq'],
+				rowheadercaption: { update: '', seq: 'No' },
+				rowheaderwidth : { update: '50', seq: '50' },
+				columns: [
+					{ caption: [''], ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+					{ caption: ['코드'], ref: 'COMM_GBN', width: '30%', style: 'text-align:center', type: 'input' },
+					{ caption: ['구분'], ref: 'COMM_GBNM', width: '60%', style: 'text-align:left', type: 'input' }
+				],
+				primarykey: [ 'COMM_GBN' ],
+				custompanel: [ 'toggleEditMode', 'refresh', 'add', 'delete', 'save', 'template', 'exportExcel', 'importExcel' ]
+			},
+			tab_02: {
+				parentid: 'SBGridArea_02',
+				id: 'viewX.grid_02',
+				jsonref: 'viewX.gridData_02',
+				backcoloralternate: '#F8F8F8',
+				rowheight: '30',
+				rowheader: ['update','seq'],
+				rowheadercaption: { update: '업데이트정보', seq: 'No' },
+				rowheaderwidth : { update: '50', seq: '50' },
+				columns: [
+					{ caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+					{ caption: '코드', ref: 'COMM_LCODE', width: '30%', style: 'text-align:center', type: 'input' },
+					{ caption: '구분', ref: 'COMM_LNAME', width: '60%', style: 'text-align:left', type: 'input' }
+				],
+				primarykey: [ 'COMM_LCODE' ],
+				custompanel: [ 'refresh', 'add', 'delete', 'save', 'importExcel' ]
+			}
+		};
+		
+		viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+		viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+		viewX.loadGridData('tab_01', false);
+	    
+		var readAction = () => {
+			var tabValue = korbiztech.tabAction.getActiveTabValue();
+			tabValue && viewX.loadGridData(tabValue);
+		};
+		
+		$('#btnRead').click(readAction);
+	});
+</script>
+<style>
+	.sbt-con-wrap .sbt-search-wrap {
+		width: calc(100% - 5px);
+		text-align: right;
+		background: #f5f5f5;
+		border-radius: 10px;
+		box-shadow: 1px 2px 3px #00000021;
+		padding: 5px 5px 5px 0;
+	}
+</style>
+<div class="menuPath-wrap">
+	<div class="menuPath-title"></div>
+</div>
+
+<div class="sbt-popup-content-wrap">
+
+	<div class="sbt-con-wrap">
+        <div class="sbt-search-wrap"> 
+			<sbux-button id="btnRead" name="btnRead" uitype="normal" text="조회"></sbux-button>
+		</div>
+	</div>
+
+	<!--full content-->
+	<!-- 페이지의 컨텐츠 영역을 나타냅니다. 컨텐츠가 전체화면에 나타납니다. -->
+	<div class="sbt-wrap-full">
+		
+		<!--탭 입력 영역-->
+		<div class="sbt-input-tab">
+
+			<!-- SBUx tab 컴포넌트 -->
+			<sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" jsondata-ref="viewX.TAB_PROPERTIES"
+				title-target-id-array="tab_01^tab_02^tab_03" title-text-array="tab_01^tab_02^tab_03"
+				is-close-icon="false" is-scrollable="false" is-draggable="false" onclick="viewX.moveTab(tab_norm)">
+			</sbux-tabs>
+
+			<div class="tab-content">
+				<!-- 탭1 -->
+				<div id="tab_01">
+					<div class="sbt-tab-wrap">
+						<div class="sbt-grid">
+							<div id="SBGridArea_01" style="height: 370px;"></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 탭2 -->
+				<div id="tab_02">
+					<sbux-select id="idxSelect_single" name="select_single" uitype="single"
+						style="width:150px;" onchange="evt_onchange(select_single)">
+						<option-item value="" selected>--선택--</option-item>
+						<option-item value="red" style="color:red;" >Red</option-item>
+						<option-item value="green">Green</option-item>
+						<option-item value="blue">Blue</option-item>
+					</sbux-select>        
+					<div class="sbt-tab-wrap">
+						<div class="sbt-grid">
+							<div id="SBGridArea_02" style="height: 370px;"></div>
+						</div>
+					</div>
+				</div>
+				
+				<!-- 탭3-->
+				<div id="tab_03">
+					<div class="sbt-tab-wrap">
+						<div class="sbt-grid">
+							<div id="SBGridArea_03" style="height: 370px;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA020SI_DAO">
+<select  id="selectList" parameterType="HashMap" resultType="HashMap">
+    SELECT /* AAXA020 */
+    	HANGM_CD, HANGM_NM, HANGM_TY, HANGM_FM, HANGM_LN, 
+    	HANGM_TG, HANGM_ID, HANGM_BG
+    FROM   AXTB0240
+    WHERE HANGM_CD LIKE '%'||  #{gubun} ||'%'
+</select>
+  
+  
+<insert id="saveGrid01InsertData">
+ 	INSERT ALL
+  	<foreach collection="insertList" item="item">
+    INTO AXTB0240
+       (HANGM_CD, HANGM_NM, HANGM_TY, HANGM_FM, HANGM_LN, 
+   		HANGM_TG, HANGM_ID, HANGM_BG)
+      VALUES (
+         #{item.HANGM_CD}, #{item.HANGM_NM}, #{item.HANGM_TY}, #{item.HANGM_FM}, #{item.HANGM_LN},
+         #{item.HANGM_TG}, #{item.HANGM_ID}, #{item.HANGM_BG})
+      </foreach>
+      SELECT 1 FROM DUAL
+</insert>
+
+<update id="saveGrid01UpdateData">
+   	<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	UPDATE AXTB0240 SET
+       HANGM_NM = #{item.HANGM_NM}, 
+       HANGM_TY = #{item.HANGM_TY}, 
+       HANGM_FM = #{item.HANGM_FM}, 
+       HANGM_LN = #{item.HANGM_LN}, 
+       HANGM_TG = #{item.HANGM_TG}, 
+       HANGM_ID = #{item.HANGM_ID}, 
+       HANGM_BG = #{item.HANGM_BG}
+    WHERE HANGM_CD = #{item.HANGM_CD}
+    </foreach>
+</update>
+
+<delete id="saveGrid01DeleteData">
+   	DELETE FROM AXTB0240
+    <where>
+	<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+       (HANGM_CD = #{item.HANGM_CD})
+       </foreach>
+   </where>
+</delete>
+
+</mapper>

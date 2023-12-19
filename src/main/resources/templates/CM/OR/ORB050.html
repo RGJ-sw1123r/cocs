@@ -1,0 +1,191 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {},
+        siteJson: [],
+        TAB_PROPERTIES: [
+            { id: '0', pid: '-1', order: '1', text: '현장별 발주현황', targetid: 'tab_01'},
+            { id: '1', pid: '-1', order: '2', text: '업체별 계약현황', targetid: 'tab_02'},
+            { id: '2', pid: '-1', order: '3', text: '공종별 발주현황', targetid: 'tab_03'},
+        ],
+        moveTab: function (tabName) {
+            // loadGridData(tabName.toLowerCase(), false);
+            this.loadGridData(tabName.toLowerCase());
+        },
+        getGridVariables: function (tabName) {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            }
+        },
+        loadGridData: function (tabName) {
+            var variables = viewX.getGridVariables(tabName);
+            var url = '/api/ORB050/' + tabName + '/gridData';
+            var params = {};
+
+            switch (tabName) {
+                case 'tab_01':
+                    SBUxMethod.refresh('input_custnm');
+                    SBUxMethod.refresh('input_ordrnm');
+                    params.SITE = $('#select_site').val();
+                    break;
+                case 'tab_02':
+                    SBUxMethod.refresh('select_site');
+                    SBUxMethod.refresh('input_ordrnm');
+                    params.CUSTNM = $('#input_custnm').val();
+                    var GRID_PROPERTIES = {
+                        tab_02: {
+                            parentid: 'SBGridArea_02',
+                            id: 'viewX.grid_02',
+                            jsonref: 'viewX.gridData_02',
+                            rowheader: ['seq'],
+                            height: '600px',
+                            custompanel: [],
+                            primarykey: [],
+                            columns: [
+                                { caption: ['업체명'], ref: 'CUST_NAME', width: '130px', style: 'text-align:left', type: 'output' },
+                                { caption: ['현장명'], ref: 'SITE_NAME', width: '130px', style: 'text-align:left', type: 'output' },
+                                { caption: ['발주공종명'], ref: 'ORDR_NAME', width: '130px', style: 'text-align:left', type: 'output' },
+                                { caption: ['공사기간'], ref: 'CONT_TERM', width: '140px', style: 'text-align:center', type: 'output' },
+                                { caption: ['도급금액'], ref: 'CONT_DOGUB', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['발주금액'], ref: 'CONT_SIL', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['계약금액'], ref: 'CONT_CAMT', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['도급대비'], ref: 'DOGUB_RATIO', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['실행대비'], ref: 'SIL_RATIO', width: '80px', style: 'text-align:right', type: 'output' },
+                            ]
+                        }
+                    }
+                    viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+                    break;
+                case 'tab_03':
+                    SBUxMethod.refresh('select_site');
+                    SBUxMethod.refresh('input_custnm');
+                    params.ORDRNM = $('#input_ordrnm').val();
+                    var GRID_PROPERTIES = {
+                        tab_03: {
+                            parentid: 'SBGridArea_03',
+                            id: 'viewX.grid_03',
+                            jsonref: 'viewX.gridData_03',
+                            rowheader: ['seq'],
+                            height: '600px',
+                            custompanel: [],
+                            primarykey: [],
+                            columns: [
+                                { caption: ['발주공종명'], ref: 'ORDR_NAME', width: '150px', style: 'text-align:left', type: 'output' },
+                                { caption: ['현장명'], ref: 'SITE_NAME', width: '130px', style: 'text-align:left', type: 'output' },
+                                { caption: ['업체명'], ref: 'CUST_NAME', width: '120px', style: 'text-align:left', type: 'output' },
+                                { caption: ['선정일자'], ref: 'CALL_DATE', width: '80px', style: 'text-align:center', type: 'output' },
+                                { caption: ['공사기간'], ref: 'CONT_TERM', width: '140px', style: 'text-align:center', type: 'output' },
+                                { caption: ['도급금액'], ref: 'CONT_DOGUB', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['발주금액'], ref: 'CONT_SIL', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['계약금액'], ref: 'CONT_CAMT', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['도급대비'], ref: 'DOGUB_RATIO', width: '80px', style: 'text-align:right', type: 'output' },
+                                { caption: ['실행대비'], ref: 'SIL_RATIO', width: '80px', style: 'text-align:right', type: 'output' },
+                            ]
+                        }
+                    }
+                    viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_03);
+                    break;
+            }
+            
+            viewX[variables.datagridVar].clearStatus();
+            viewX[variables.datagridVar].lockGrid(true);
+
+            exios.get(url, params, {}).then((response) => {
+                const resultData = response.data;
+                viewX[variables.dataVar] = resultData;
+                viewX[variables.datagridVar].setGridData(viewX[variables.dataVar], true);
+                // issue: focus false is not working
+                viewX[variables.datagridVar].refresh({'focus': false});
+                korbiztech.gridAction.disablePrimaryKeyCells(variables.datagridVar);
+                viewX[variables.datagridVar].lockGrid(false);
+            }). catch((error) => {
+                korbiztech.alert('MSG_GRID_GET_FAIL');
+                viewX[variables.datagridVar].lockGrid(false);
+            });
+
+        },
+        selectSite: function () {
+            exios.get('/api/ORB050/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.loadGridData('tab_01');
+            });
+        },
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                height: '600px',
+                explorerbar: 'sort',
+                custompanel: [],
+                primarykey: [],
+                columns: [
+                    { caption: ['발주공종명'], ref: 'ORDR_NAME', width: '180px', style: 'text-align:left', type: 'output' },
+                    { caption: ['업체명'], ref: 'CUST_NAME', width: '160px', style: 'text-align:left', type: 'output' },
+                    { caption: ['선정일자'], ref: 'CALL_DATE', width: '80px', style: 'text-align:center', type: 'output', sortable: false },
+                    { caption: ['공사기간'], ref: 'CONT_TERM', width: '180px', style: 'text-align:center', type: 'output', format: {type:'string', rule: '####-##-##~####-##-##'}, sortable: false },
+                    { caption: ['도급금액'], ref: 'CONT_DOGUB', width: '100px', style: 'text-align:right', type: 'output', format: {type:'string', rule: '#,###'}, sortable: false },
+                    { caption: ['발주금액'], ref: 'CONT_SIL', width: '100px', style: 'text-align:right', type: 'output', format: {type:'string', rule: '#,###'}, sortable: false },
+                    { caption: ['계약금액'], ref: 'CONT_CAMT', width: '100px', style: 'text-align:right', type: 'output', format: {type:'string', rule: '#,###'}, sortable: false },
+                    { caption: ['도급대비'], ref: 'DOGUB_RATIO', width: '100px', style: 'text-align:right', type: 'output', format: {type:'string', rule: '#.00'}, sortable: false },
+                    { caption: ['실행대비'], ref: 'SIL_RATIO', width: '100px', style: 'text-align:right', type: 'output', format: {type:'string', rule: '#.00'}, sortable: false },
+                ]
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.selectSite();
+    });
+</script>
+<style>
+    .tab-container {
+        margin: 10px;
+    }
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="tab-container">
+        <!-- SBUx tab component -->
+        <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" jsondata-ref="viewX.TAB_PROPERTIES"
+            title-target-id-array="tab_01^tab_02^tab_03" title-text-array="tab_01^tab_02^tab_03"
+            is-close-icon="false" is-scrollable="false" is-draggable="false" onclick="viewX.moveTab(tab_norm)">
+        </sbux-tabs>
+
+        <div class="tab-content">
+            <div id="tab_01">
+                현장명
+                <sbux-select id="select_site" name="select_site" uitype="single"
+                    jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+                    onchange="viewX.loadGridData('tab_01')">
+                </sbux-select>
+                <div id="SBGridArea_01"></div>
+            </div>
+
+            <div id="tab_02">
+                업체명
+                <sbux-input id="input_custnm" name="input_custnm" uitype="text" style="width: 300px;"
+                    onkeyenter="viewX.loadGridData('tab_02')">
+                </sbux-input>
+                <div id="SBGridArea_02"></div>
+            </div>
+            
+            <div id="tab_03">
+                공사명
+                <sbux-input id="input_ordrnm" name="input_ordrnm" uitype="text" style="width: 300px;"
+                    onkeyenter="viewX.loadGridData('tab_03')">
+                </sbux-input>
+                <div id="SBGridArea_03"></div>
+            </div>
+        </div>
+    </div>
+</html>

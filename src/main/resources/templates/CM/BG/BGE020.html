@@ -1,0 +1,147 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        gubuJson: [],
+        resourceJson: [],
+        selectGubu: function () {
+            exios.get('/api/BGE020/selectGubu').then((response) => {
+                viewX.gubuJson = response.data;
+		        SBUxMethod.refresh("select_gubu");
+                viewX.selectResource();
+                viewX.selectGrid();
+            });
+        },
+        selectResource: function () {
+            var params = {
+                GBN: $('#select_gubu').val(),
+            }
+
+            exios.get('/api/BGE020/selectResource', params).then((response) => {
+                viewX.resourceJson = response.data;
+		        SBUxMethod.refresh("select_resource");
+            });
+        },
+        selectGrid: function () {
+            var params = {
+                GUBU: $('#select_gubu').val()
+                // LNAME: $('#select_resource').val(),
+            }
+            console.log(params);
+            
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/BGE020/selectGrid', params).then((response) => {
+                console.log(response.data);
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.refresh({'focus': false});
+                viewX.grid_01.lockGrid(false);
+            }).catch((error) => {
+                console.log(error);
+                korbiztech.alert('MSG_GRID_GET_FAIL');
+                viewX.grid_01.lockGrid(false);
+            });
+        },
+        input_codeEnter: function (input_code) {
+            console.log(input_code);
+        },
+        input_nameEnter: function (input_name) {
+            console.log(input_name);
+        },
+        input_sizeEnter: function (input_size) {
+            console.log(input_size);
+        },
+        button_addExcelClick: function () {
+            console.log('Excel 추가등록');
+        },
+        button_addFullExcelClick: function () {
+            console.log('Excel 전체등록');
+        },
+        button_unlockClick: function () {
+            console.log('LOCK 해제');
+        }
+    }
+
+    $(function () {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '40'},
+                height: '500px',
+                custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                primarykey: ['ITEM_CODE'],
+                columns: [
+                    { caption: ['기술'], ref: 'ITEM_GUBU', width: '120px', style: 'text-align:center', type: 'input', hidden: true },
+                    { caption: ['코드'], ref: 'ITEM_CODE', width: '120px', style: 'text-align:center', type: 'output' },
+                    { caption: ['명칭'], ref: 'ITEM_NAME', width: '120px', style: 'text-align:left', type: 'input' },
+                    { caption: ['규격'], ref: 'ITEM_SIZE', width: '140px', style: 'text-align:left', type: 'input' },
+                    { caption: ['단위'], ref: 'ITEM_UNIT', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['자재코드'], ref: 'ITEM_MCODE', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['계정코드'], ref: 'ITEM_ACT', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['EMS코드'], ref: 'ITEM_EMS', width: '120px', style: 'text-align:left', type: 'input' },
+                    { caption: ['MID코드'], ref: 'ITEM_BEST', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['자원코드'], ref: 'ITEM_RCODE', width: '120px', style: 'text-align:center', type: 'input', hidden: true },
+                    { caption: ['자원코드명'], ref: 'ITEM_RCODE', width: '120px', style: 'text-align:left', type: 'input' }
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectGubu();
+    })
+</script>
+<style>
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>내역마스터등록</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <div class="sortbox_inner">
+            <ul class="sortitem">
+                <span id="text">기술구분</span>
+                <sbux-select id="select_gubu" name="select_gubu" uitype="single"
+                    jsondata-ref="viewX.gubuJson" jsondata-text="GUBU_NAME" jsondata-value="GUBU_CODE"
+                    onchange="viewX.selectGrid()">
+                </sbux-select>
+                <span id="text">자원코드</span>
+                <!-- COMM_LCODE 대분류코드, COMM_LNAME 대분류명 FROM TCT_COMM -->
+                <sbux-select id="select_resource" name="select_resource" uitype="single"
+                    jsondata-ref="viewX.resourceJson" jsondata-text="COMM_LNAME" jsondata-value="COMM_LCODE"
+                    onchange="viewX.selectGrid()">
+                </sbux-select>
+                <span id="text">코드</span>
+                <sbux-input id="input_code" name="input_code" uitype="text" style="width: 100px;"
+                onkeyenter="viewX.input_codeEnter(input_code)">
+                </sbux-input>
+                <span id="text">명칭</span>
+                <sbux-input id="input_name" name="input_name" uitype="text" style="width: 100px;"
+                onkeyenter="viewX.input_nameEnter(input_name)">
+                </sbux-input>
+                <span id="text">규격</span>
+                <sbux-input id="input_size" name="input_size" uitype="text" style="width: 100px;"
+                onkeyenter="viewX.input_sizeEnter(input_size)">
+            </sbux-input>
+            </ul>
+            <div class="sort_btn">
+                <sbux-button id="button_addExcel" name="button_addExcel" uitype="normal" text="Excel 추가등록"
+                    onClick="viewX.button_addExcelClick()" class="btn_etc">
+                </sbux-button>
+                <sbux-button id="button_addFullExcel" name="button_addFullExcel" uitype="normal" text="Excel 전체등록"
+                    onClick="viewX.button_addFullExcelClick()" class="btn_etc">
+                </sbux-button>
+                <sbux-button id="button_unlock" name="button_unlock" uitype="normal" text="LOCK 해제" button-color="blue"
+                    onClick="viewX.button_unlockClick()" class="btn_s_edit">
+                </sbux-button>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</html>

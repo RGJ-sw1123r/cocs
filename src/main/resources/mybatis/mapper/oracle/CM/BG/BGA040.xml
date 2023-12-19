@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGA040_DAO">
+    <select id="selectGrid" resultType="HashMap">
+        SELECT A.SITE_CODE, A.SITE_NAME,
+            DECODE(B.INFO_CHSU, NULL,NULL, '0', '가실행', B.INFO_CHSU || '차') INFO_CHSU,
+            B.INFO_CHSU CHSU, B.INFO_COMP
+        FROM TCT_SITE A, 
+            (SELECT A.INFO_OFFICE, A.INFO_SITE, A.INFO_CHSU, A.INFO_COMP
+            FROM TBG_INFO A,
+                (SELECT INFO_OFFICE, INFO_SITE, MAX(INFO_CHSU) INFO_CHSU
+                FROM TBG_INFO
+                WHERE INFO_CHSU <![CDATA[ >= ]]> 0
+        GROUP BY INFO_OFFICE, INFO_SITE) B
+        WHERE A.INFO_OFFICE = B.INFO_OFFICE
+            AND A.INFO_SITE = B.INFO_SITE
+            AND A.INFO_CHSU = B.INFO_CHSU) B
+        WHERE SITE_OFFICE = '01'
+            AND SITE_USEYN = '1'
+            AND SITE_CODE IN (
+        SELECT AVBUJ_CD FROM SYTB0110
+        WHERE GUNHA_BG = '1'
+        UNION ALL
+        SELECT SITE_CODE FROM TCT_SITE
+        WHERE EXISTS (SELECT 1 FROM SYTB0110
+            WHERE GUNHA_BG = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        ORDER BY A.SITE_CODE
+    </select>
+
+    <update id="saveGrid">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+            UPDATE TBG_INFO
+            SET INFO_COMP = #{item.INFO_COMP}
+            WHERE INFO_OFFICE = '01'
+                AND INFO_SITE = #{item.SITE_CODE}
+                AND INFO_CHSU = #{item.CHSU}
+        </foreach>
+    </update>
+</mapper>

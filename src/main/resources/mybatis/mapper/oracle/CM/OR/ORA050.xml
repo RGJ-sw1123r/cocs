@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORA050_DAO">
+
+    <select id="selectTree" parameterType="HashMap" resultType="HashMap">
+        SELECT DISTINCT COMM_LCODE || '. ' || COMM_LNAME as GONG_CODE , 1  as GONG_NAME ,'' GONG_PERM
+            FROM TOR_GONG, TOR_COMM
+            WHERE SUBSTR(GONG_CODE,1,1) = COMM_LCODE(+) 
+                AND COMM_OFFC(+) = '01'
+                AND COMM_GBN(+) = '01'
+                AND COMM_LCODE(+) <![CDATA[<> ]]> '00'
+        UNION ALL
+        SELECT GONG_CODE || '. ' || GONG_NAME as GONG_CODE, 2 as GONG_NAME, GONG_PERM
+            FROM TOR_GONG
+            ORDER BY GONG_CODE 
+    </select>
+</mapper>

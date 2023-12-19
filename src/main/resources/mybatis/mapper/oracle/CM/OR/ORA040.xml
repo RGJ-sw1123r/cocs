@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORA040_DAO">
+
+    <select id="selectTree" resultType="HashMap">
+        SELECT DISTINCT COMM_LCODE || '. ' || COMM_LNAME AS GONG_CODE , 1  AS GONG_NAME ,'' GONG_PERM,
+        COMM_LCODE AS "id", '0' AS "pid"
+        FROM TOR_GONG, TOR_COMM
+        WHERE SUBSTR(GONG_CODE, 1, 1) = COMM_LCODE(+)
+        AND COMM_OFFC(+) = '01'
+        AND COMM_GBN(+) = '01'
+        AND COMM_LCODE(+) <![CDATA[<> ]]> '00'
+        UNION ALL
+        SELECT GONG_CODE || '. ' || GONG_NAME AS GONG_CODE, 2 AS GONG_NAME, GONG_PERM,
+        GONG_CODE AS "id", SUBSTR(GONG_CODE, 1, 1) AS "pid"
+        FROM TOR_GONG
+        ORDER BY GONG_CODE
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT BASE_YEAR
+        , BASE_BSNO
+        , BASE_NAME
+        , BASE_OWNAME
+        , BASE_GONG
+        , BASE_SILJUK
+        , BASE_RANK
+        , BASE_SKILL
+        , BASE_OWNER
+        , BASE_FUND1
+        , BASE_FUND2
+        , BASE_FUND3
+        , BASE_FUND4
+        , BASE_FUND5
+        , BASE_FUND6
+        , BASE_FUND7
+        , BASE_FUND8
+        , BASE_ISO
+        , BASE_HISTORY
+        , BASE_DEP
+        , BASE_PRIZE
+        , DECODE(BASE_COMPYN, '1', 'T', 'F') BASE_COMPYN
+        , TO_CHAR(BASE_INDAY, 'YYYYMMDD') BASE_INDAY
+        , BASE_INUSR
+        , TO_CHAR(BASE_UPDAY, 'YYYYMMDD') BASE_UPDAY
+        , BASE_UPUSR
+        , BASE_PMAN
+        , BASE_PDATE
+        , SUBSTR(BASE_GONG, 1, 1) AS GONG_GBNNO
+        , BASE_JUMSU1
+        , BASE_JUMSU2
+        , BASE_JUMSU3
+        , BASE_JUMSU4
+        , BASE_TOTAL
+        , RANK() OVER ( ORDER BY BASE_TOTAL DESC ) AS BASE_JRANK
+        FROM TOR_BASE
+        WHERE BASE_YEAR = #{YEAR}
+        AND BASE_GONG LIKE '%' || #{BASEGONG} || '%'
+        ORDER BY BASE_JRANK, BASE_YEAR DESC, BASE_BSNO DESC
+    </select>
+</mapper>

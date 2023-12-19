@@ -1,0 +1,78 @@
+<script>
+    var viewX = {
+        siteJson: [],
+        printJson: [
+            { text : '◆ 공사비총괄표', value : 0 },
+            { text : '◆ 공사비총괄표[계약단가적용]', value : 1 },
+            { text : '◆ 공종별집계표', value : 2 },
+            { text : '◆ 공종별집계표[계약단가적용]', value : 3 },
+            { text : '◆ 공종별집계표[공구]', value : 4 },
+            { text : '◆ 실행내역서', value : 5 },
+            { text : '◆ 실행내역서[계약단가적용]', value : 6 },
+            { text : '◆ 실행/계약내역대비', value : 7 },
+            { text : '◆ 금액관리자원현황', value : 8 },
+            { text : '◆ 공종별소요자재현황', value : 8 },
+            { text : '◆ 실정보고현황집계', value : 10 },
+        ],
+        radio_listClick: function (radio_list) {
+            console.log("radio index =>", radio_list);
+            // legacy: radio index 별로 우측 상세조건 component를 다르게 그림
+        },
+        button_printClick: function() {
+            window.print();
+        }
+    }
+
+    $(function() {
+      // initial data select call()
+    })
+</script>
+<style>
+    .container {
+        display: flex;
+    }
+
+    .radio-container,
+    .select-container {
+        flex: 1;
+    }
+
+    .radio-container {
+        margin: 10px;
+        border: 2px solid whitesmoke;
+    }
+
+    .select-container {
+        margin: 10px;
+    }
+
+    .sbux-rdo-wrap {
+        display: block;
+        margin: 10px;
+    }
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>출력</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="container">
+        <div class="radio-container">
+            <sbux-radio id="radio_list" name="radio_list" uitype="normal" jsondata-ref="viewX.printJson"
+                jsondata-text="text" jsondata-value="value" onclick="viewX.radio_listClick(radio_list)">
+            </sbux-radio>
+        </div>
+        <div class="select-container">
+            현장명
+            <sbux-select id="select_site" name="select_site" uitype="single" auto-size="true"
+                jsondata-ref="viewX.siteJson"
+                jsondata-text="SITE_NAME"
+                jsondata-value="SITE_CODE"
+                onchange="viewX.siteChange()">
+            </sbux-select>
+            <sbux-button id="button_print" name="button_print" uitype="normal" text="출력"
+                onClick="viewX.button_printClick()" class="btn_print">
+            </sbux-button>
+        </div>
+    </div>
+</html>

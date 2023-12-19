@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORG060_DAO">
+
+    <select id="selectSubGrop" parameterType="HashMap" resultType="HashMap">
+        SELECT GROP_GBN, GROP_GCODE,  GROP_GCODE || '. ' || GROP_NAME AS GROP_NAME, GROP_ADDVAL
+        FROM TOR_GROP
+        WHERE GROP_GBN = #{GUBUN}
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT GRLP_GBN, GRLP_GCODE, GRLP_CODE, GRLP_NAME, GRLP_ADDVAL, GRLP_NOTE
+        FROM TOR_GRLP
+        WHERE GRLP_GBN = #{GUBUN}
+        AND GRLP_GCODE = #{SUB_GUBUN}
+        ORDER BY GRLP_CODE
+    </select>
+</mapper>

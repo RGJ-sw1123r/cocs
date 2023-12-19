@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<th:replace th:insert="~{head :: head}"></th:replace>
+</head>
+<script>
+	var viewX = {}
+</script>
+
+<body>
+	<div class="sbt-A-wrap color_v1"> <!-- color_v1 : Orange-blue -->
+		<!-- header -->
+		<div class="sbt-all-header header">
+			<!-- tnb -->
+			<div class="tnb">
+				<div>
+					<span th:text="${member.usersNm}+'님'"></span><span>, 안녕하세요!</span>
+				</div>
+				<div>	
+					<span th:text="'로그인 시간 '+${member.now}"></span>				
+					<a href="#">전자결재</a>
+					<a href="/api/auth/logout">로그아웃</a>
+				</div>
+			</div>
+			<!-- header (topmenu) -->
+			<div class="sbt-all-header">
+				<sbux-menu id="idxTop_json" name="menu_json" uitype="normal" jsondata-ref="topMenu" is-fixed="false" wrap-style="width:100%">
+					<brand-item text="COC'S ERP" image-src="/img/design/logo.png" link="/"></brand-item>
+				</sbux-menu>
+				
+				<button class="btn_mymenu">MY MENU</button> <!-- toggle on >> .on 삽입 -->
+				<ul class="mymenu">
+					<li><a href="#">협력업체 등록정보</a></li>
+					<li><a href="#">본사 판매관리비</a></li>
+					<li><a href="#">협력업체 등록정보</a></li>
+					<li><a href="#">본사 판매관리비</a></li>
+					<li><a href="#">협력업체 등록정보</a></li>
+					<li><a href="#">협력업체 등록정보</a></li>
+					<li><a href="#">본사 판매관리비</a></li>
+					<li><a href="#">협력업체 등록정보</a></li>
+					<li><a href="#">본사 판매관리비</a></li>
+					<li><a href="#">협력업체 등록정보</a></li>
+				</ul>
+			</div>
+		</div>
+		<!-- //header -->
+		
+		<!-- main -->
+		<div class="main dsb">
+			<!-- left (sidemenu) -->
+			<div class="left">
+				<button class="btn_menu_sh open"> </button>
+				<div class="menu_container">
+					<!-- 2depth 박스: 서브페이지에만 노출 -->
+					<div class="dpt2">
+						<span></span>
+						<span></span>
+					</div>
+					<!-- //2depth 박스: 서브페이지에만 노출 -->
+					<div class="sbt-all-left">
+						<sbux-sidemenu id="idxSide_json" name="side_json" uitype="normal" jsondata-ref="sideMenu">
+					</div>
+				</div>
+			</div>
+			
+				<div id="content" class="content">
+					<div class="con_wrap color_v1">
+						<!-- main content -->
+						<div class="dumm_contain" style="width: auto; overflow: hidden;">
+							<img src="img/design/dashboard_dummy.jpg" class="dsb_dummy">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- //main -->
+	</body>
+	<script>
+		// MY MENU
+		$('button.btn_mymenu').on('click', function(){
+			$(this).toggleClass('on');
+			$('ul.mymenu').toggleClass('on');
+		});
+
+		// leftmenu
+		// 열려있는 상태
+		$('.left .btn_menu_sh').on('click', function(){
+			$('.left').toggleClass('hide');
+			$('.content').toggleClass('spread');
+
+		});
+		
+	</script>
+</html>

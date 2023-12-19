@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.CM.EQ.dao.EQA020_DAO">
+
+    <select id="selectGrid" resultType="HashMap">
+        SELECT MSTR_BIZNO, DEALR_NM, MSTR_ECODE, ECODE_NAME, ECODE_SIZE, ECODE_UNIT,
+            MSTR_CARNO, MSTR_RDATE,	MSTR_GUBUN, MSTR_AMT, MSTR_ESTD1 || MSTR_ESTD2 AS MSTR_ESTD
+        FROM TEQ_MSTR, AXTB1100, TEQ_ECODE							
+        WHERE MSTR_BIZNO = SAEOB_NO(+)								
+        AND MSTR_ECODE = ECODE_CODE(+)							
+        AND MSTR_OFFICE = '01'
+        <if test="SITE_CODE != null">
+            AND MSTR_SITE = #{SITE_CODE}
+        </if>
+    </select>
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_EQ = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_EQ = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+    
+</mapper>

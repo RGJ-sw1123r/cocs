@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.AS.dao.ASB060_DAO">
+   
+   <!-- ASB060 하자보수 보증처리현황 전체 조회-->
+    <select id="selectList" parameterType="HashMap" resultType="HashMap">
+        SELECT INSUR_OFFICE,      	  
+		        INSUR_SITE,            
+		        B.SITE_NAME SITE_NAME, 
+		        INSUR_GNO,             
+		        INSUR_SEQ,             
+		        INSUR_MGOJ,           
+		        INSUR_CUST,            
+		        INSUR_DAM,             
+		        INSUR_WCUST,           
+		        INSUR_SUB,             
+		        INSUR_RDATE,           
+		        INSUR_RAMT,            
+		        INSUR_SDATE,           
+		        INSUR_SAMT,            
+		        INSUR_ACCNO,           
+		        INSUR_CAUSE,           
+		        INSUR_REM,             
+		        INSUR_INDAY,           
+		        INSUR_INUSR,           
+		        INSUR_UPDAY,           
+		        INSUR_UPUSR            
+	    FROM TAS_INSUR A, TAS_SITE B, TCT_SITE C
+		WHERE A.INSUR_OFFICE  = B.SITE_OFFICE(+)
+	    AND A.INSUR_SITE    = B.SITE_CODE(+)
+        AND B.SITE_OFFICE = C.SITE_OFFICE(+)
+        AND B.SITE_CODE = C.SITE_CODE(+)
+		AND INSUR_OFFICE    = #{officeCode}
+        AND NVL(C.SITE_CONTYPE,' ') LIKE #{constDivision} ||'%'
+		AND INSUR_SITE    LIKE '%'||  #{constName} ||'%'
+		AND nvl(B.site_comp,' ') <![CDATA[<> ]]> '1'
+		ORDER BY INSUR_OFFICE ASC , INSUR_SITE ASC , INSUR_GNO ASC , INSUR_SEQ ASC
+    </select>
+
+    <!--공사구분 코드 호출-->
+    <select id="constDivision" resultType="HashMap">
+        SELECT comm_lcode, 
+               comm_lname,
+			   '(' || comm_lcode || ')' || ' ' || comm_lname AS comm_look 
+        FROM TCT_COMM 
+        WHERE comm_gbn='01'
+		AND comm_lname IS NOT NULL
+    </select>
+
+	    <!--현장명 코드 호출-->
+    <select id="constName" resultType="HashMap">
+        SELECT A.SITE_OFFICE, 
+		 	   A.SITE_CODE,  
+		       A.SITE_NAME,  
+		       '(' || A.SITE_CODE || ')' || ' ' ||  A.SITE_NAME  AS SITE_look,  
+		       A.SITE_ASAMT, 
+		        A.SITE_TUJAAMT  
+	 	FROM CWCON.TAS_SITE A, CWCON.TCT_SITE B  
+	    WHERE A.SITE_OFFICE = B.SITE_OFFICE(+) 
+	    AND A.SITE_CODE = B.SITE_CODE(+) 
+	    AND A.SITE_OFFICE = '01'  
+        AND NVL(A.SITE_COMP,' ') <![CDATA[<> ]]> '1'
+        ORDER BY A.SITE_OFFICE ASC , A.SITE_CODE ASC
+    </select>
+</mapper>

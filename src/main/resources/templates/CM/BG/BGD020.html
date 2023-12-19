@@ -1,0 +1,124 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        dateJson: [],
+        gubunJson: [
+            { text: '전체', value: '0' },
+            { text: '승인', value: '1' },
+            { text: '미승인', value: '2' },
+        ],
+        selectSite: function () {
+            // 전현장 조회?
+            exios.get('/api/BGD020/selectSite').then((response) => {
+		        viewX.siteJson = response.data;
+		        SBUxMethod.refresh("select_site");
+                viewX.selectGrid();
+            });
+        },
+        selectDate: function() {
+            exios.get('/api/BGD020/selectDate').then((response) => {
+                viewX.dateJson = response.data;
+                SBUxMethod.refresh("select_sdate");
+                SBUxMethod.refresh("select_edate");
+            });
+        },
+        selectGrid: function () {
+            var params = {
+                SITE: $('#select_site').val(),
+                SDATE: $('#select_sdate').val(),
+                EDATE: $('#select_edate').val()
+            }
+            exios.get('/api/BGD020/selectGrid', params).then((response => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.setColDisabled(8, true);
+                viewX.grid_01.refresh({focus: false});
+            }));
+        },
+        adjustClick: function () {
+            // 실행내역적용 버튼 클릭 이벤트는 로직 분석이 더 필요함
+            var nRow = viewX.grid_01.getRow();
+            if (nRow > 0) {
+                var rowData = viewX.grid_01.getRowData(nRow);
+                if (rowData.SADD_OK === '1') {
+                    alert('실정보고 아이템들을 실행내역에 적용하시겠습니까?');
+                } else {
+                    alert('승인 전입니다.')
+                }
+            }
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                extendlastcol: 'scroll',
+                custompanel: ['save'],
+                columns: [
+                    { caption: ['현장코드'], ref: 'SADD_SITE', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['현장명'], ref: 'SITE_NAME', width: '260px', style: 'text-align:left', type: 'output' },
+                    { caption: ['차수'], ref: 'SADD_CHSU', width: '80px', style: 'text-align:center', type: 'output' },
+                    { caption: ['품의년월'], ref: 'SADD_YYMM', width: '120px', style: 'text-align:center', type: 'output' },
+                    { caption: ['품의명'], ref: 'SADD_NAME', width: '280px', style: 'text-align:left', type: 'output' },
+                    // 승인여부는 그리드 내에서 제어
+                    { caption: ['승인여부'], ref: 'SADD_OK', width: '100px', style: 'text-align:center', type: 'checkbox', typeinfo : {checkedvalue : '1', uncheckedvalue : null}, },
+                    // 실행적용여부는 
+                    { caption: ['실행적용여부'], ref: 'SADD_UPYN', width: '100px', style: 'text-align:center', type: 'checkbox', typeinfo : {checkedvalue : '1', uncheckedvalue : null} },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectSite();
+        viewX.selectDate();
+    })
+</script>
+<style>
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>실정보고승인</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <span id="text">현장명</span>
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="viewX.selectGrid()">
+        </sbux-select>
+        <span id="text">조회구분</span>
+        <sbux-select id="select_gubun" name="select_gubun" uitype="single" jsondata-ref="viewX.gubunJson"
+            onchange="">
+        </sbux-select>
+        <span id="text">품의년월</span>
+        <sbux-select id="select_sdate" name="select_sdate" uitype="single"
+            jsondata-ref="viewX.dateJson"
+            jsondata-text="YM"
+            jsondata-value="YYYYMM"
+            onchange="viewX.selectGrid()">
+        </sbux-select>
+        <sbux-select id="select_edate" name="select_edate" uitype="single"
+            jsondata-ref="viewX.dateJson"
+            jsondata-text="YM"
+            jsondata-value="YYYYMM"
+            onchange="viewX.selectGrid()">
+        </sbux-select>
+        <!-- <div class="sort_btn alg_r"> -->
+            <!-- button style? -->
+            <sbux-button id="button_adjust" name="button_adjust" uitype="normal" text="실행내역적용"
+                onClick="viewX.adjustClick()" class="btn_run">
+            </sbux-button>
+        <!-- </div> -->
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</body>

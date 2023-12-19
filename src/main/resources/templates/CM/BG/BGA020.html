@@ -1,0 +1,190 @@
+<script>
+    var viewX = {
+        grid_01: [],
+        gridData_01: [],
+        siteJson: [],
+        gubuJson: [],
+        chsuJson: [],
+        executionJson: [
+            { text : '실행', value : '1' },
+            { text : '가실행', value : '0' },
+        ],
+        selectSite: function () {
+            exios.get('/api/BGA020/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectChsu();
+            });
+        },
+        selectChsu: function () {
+            var siteCode = $('#select_site').val();
+            var params = {SITE_CODE: siteCode};
+            
+            exios.get('/api/BGA020/selectChsu', params).then((response) => {
+                SBUxMethod.set('label_chsu', response.data[0].CHSU);
+                SBUxMethod.set('checkbox_subContract', response.data[0].SITE_DOYN);
+                viewX.selectGrid();
+            });
+        },
+        selectGubu: function () {
+            exios.get('/api/BGA020/selectGubu').then((response) => {
+                viewX.gubuJson = response.data;
+                SBUxMethod.refresh('select_gubu');
+
+                viewX.selectGrid();
+            });
+        },
+        selectGrid: function () {
+            var siteCode = $('#select_site').val();
+            var chsu = $('#label_chsu').val();
+            var gubuCode = $('#select_gubu').val();
+            var params = {
+                SITE_CODE: siteCode,
+                CHSU: chsu,
+                GUBU_CODE: gubuCode
+            };
+
+            exios.get('/api/BGA020/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        siteChange: function () {
+            viewX.selectChsu();
+        },
+        gubuChange: function () {
+            viewX.selectGrid();
+        },
+        button_searchFileClick: function () {
+            alert('로컬 파일 탐색창 열기');
+        },
+    }
+
+    $(function() {
+        viewX.selectSite();
+        viewX.selectGubu();
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid : 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '540px',
+                selectmode: 'byrow',
+                custompanel: ['refresh', 'template', 'importExcel', 'save'],
+                columns: [
+                    { caption: ['구분', '구분', '구분'], ref: 'SILD_GUBU', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['공구', '공구', '공구'], ref: 'SILD_GOGU', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['대', '대', '대'], ref: 'SILD_LGOJ', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['중', '중', '중'], ref: 'SILD_MGOJ', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['ITEM', 'ITEM', 'ITEM'], ref: 'SILD_ITEM', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['EMS MID', 'EMS MID', 'EMS MID'], ref: 'ITEM_EMS', width: '120px', style: 'text-align:center', type: 'output' },
+                    { caption: ['명칭', '명칭', '명칭'], ref: 'ITEM_NAME', width: '240px', style: 'text-align:left', type: 'output' },
+                    { caption: ['규격', '규격', '규격'], ref: 'ITEM_SIZE', width: '200px', style: 'text-align:left', type: 'output' },
+                    { caption: ['단위', '단위', '단위'], ref: 'ITEM_UNIT', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['1식\n처럼\n사용', '1식\n처럼\n사용', '1식\n처럼\n사용'], ref: 'SILD_SIK', width: '50px', style: 'text-align:center', type: 'output' },
+                    { caption: ['도급', '수량', '수량'], ref: 'SILD_DQTY', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '단가', '단가'], ref: 'SILD_DPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '금액', '금액'], ref: 'SILD_DAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '재료비', '단가'], ref: 'SILD_DMPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, ype: 'output' },
+                    { caption: ['도급', '재료비', '금액'], ref: 'SILD_DMAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '노무비', '단가'], ref: 'SILD_DLPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '노무비', '금액'], ref: 'SILD_DLAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '경비', '단가'], ref: 'SILD_DAPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['도급', '경비', '금액'], ref: 'SILD_DAAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '수량', '수량'], ref: 'SILD_SQTY', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '단가', '단가'], ref: 'SILD_SPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '금액', '금액'], ref: 'SILD_SAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '재료비', '단가'], ref: 'SILD_SMPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '재료비', '금액'], ref: 'SILD_SMAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '노무비', '단가'], ref: 'SILD_SLPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '노무비', '금액'], ref: 'SILD_SLAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주재료비', '단가'], ref: 'SILD_SOMPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주재료비', '금액'], ref: 'SILD_SOMAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주인건비', '단가'], ref: 'SILD_SOLPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주인건비', '금액'], ref: 'SILD_SOLAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주경비', '금액'], ref: 'SILD_SOAPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '외주경비', '단가'], ref: 'SILD_SOAAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '장비비', '금액'], ref: 'SILD_SEPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '장비비', '금액'], ref: 'SILD_SEAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '경비', '금액'], ref: 'SILD_SAPRI', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['실행', '경비', '금액'], ref: 'SILD_SAAMT', width: '100px', style: 'text-align:right', format: { type: 'number', rule: '#,###', emptyvalue: '0' }, type: 'output' },
+                    { caption: ['호표', '호표', '호표'], ref: 'SILD_SEQ', width: '80px', style: 'text-align:right', type: 'output' },
+                ]
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+    })
+</script>
+<style>
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>내역변환</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <div class="sortbox_inner">
+            <ul class="sortitem">
+                <li>
+                    <span id="text">현장명</span>
+                    <sbux-select id="select_site" name="select_site" uitype="single" auto-size="true"
+                        jsondata-ref="viewX.siteJson"
+                        jsondata-text="SITE_NAME"
+                        jsondata-value="SITE_CODE"
+                        onchange="viewX.siteChange()">
+                    </sbux-select>
+                </li>
+                <li>
+                    <span id="text">기술구분</span>
+                    <sbux-select id="select_gubu" name="select_gubu" uitype="single" auto-size="true"
+                        jsondata-ref="viewX.gubuJson"
+                        jsondata-text="GUBU_NAME"
+                        jsondata-value="GUBU_CODE"
+                        onchange="viewX.gubuChange()">
+                    </sbux-select>
+                </li>
+                <li>
+                    <span id="text">(차수 </span>    
+                    <sbux-label id="label_chsu" name="label_chsu" uitype="normal" text=""></sbux-label>
+                    <span id="text">차)</span> 
+                </li>
+                <li class="d_flex">
+                    <sbux-radio id="radio_execution" name="radio_execution" uitype="normal"
+                        jsondata-ref="viewX.executionJson" jsondata-text="text" jsondata-value="value">
+                    </sbux-radio>
+                    <sbux-checkbox id="checkbox_subContract" name="checkbox_subContract" uitype="normal"
+                        true-value="1" false-value="0" disabled>
+                    </sbux-checkbox>
+                    <label for="checkbox_subContract" id="text">도급공사</label>
+                </li>
+            </ul>
+            <ul class="sortitem d_flex">
+                <li>
+                    <span id="text">파일선택</span>    
+                </li>
+                <li class="mr5">
+                    <sbux-input id="input_file" name="input_file" uitype="text" style="width: 320px;"></sbux-input>
+                </li>
+                <li>
+                    <sbux-button id="button_searchFile" name="button_searchFile" uitype="normal" text="찾아보기" class="btn_s_edit"
+                        onClick="viewX.button_searchFileClick()">
+                    </sbux-button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+    <ul class="sortitem">
+        <li>
+            <sbux-textarea id="textarea_info" name="textarea_info" uitype="normal" style="width: 600px; height: 100px" init="저장시 Excel파일 오류확인.."></sbux-textarea>
+        </li>
+        <li>
+            <sbux-button id="button_forceSave" name="button_forceSave" uitype="normal" text="강제저장" class="btn_etc"></sbux-button>
+        </li>
+    </ul>
+</body>

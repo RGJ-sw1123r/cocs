@@ -1,0 +1,202 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {},
+        gridData_01: {}, gridData_02: {},
+        siteJson: [],
+        gubuJson: [],
+        TAB_PROPERTIES: [
+            { id: '0', pid: '-1', order: '1', text: '일반정보', targetid: 'tab_01'},
+            { id: '1', pid: '-1', order: '2', text: '공사개요', targetid: 'tab_02'},
+            { id: '2', pid: '-1', order: '3', text: '입찰정보', targetid: 'tab_03'},
+        ],
+        selectSite: function () {
+            exios.get('/api/ORB010/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectMainGrid();
+            }); 
+        },
+        selectMainGrid: function () {
+            var params = { ORDRSITE: $('#select_site').val() };
+            exios.get('/api/ORB010/selectMainGrid', params).then((response) => {
+                console.log(response.data);
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        selectSubGrid: function () {
+            var nRow = viewX.grid_01.getRow();
+            var ordrBno = viewX.grid_01.getRowData(nRow).ORDR_BNO;
+            var params = {
+                ORDRSITE: $('#select_site').val(),
+                ORDRBNO: ordrBno
+            };
+            
+            exios.get('/api/ORB010/selectSubGrid', params).then((response) => {
+                viewX.gridData_02 = response.data;
+                viewX.grid_02.refresh({'focus': false});
+            });
+        },
+        mainGridCilck: function () {
+            viewX.selectSubGrid();
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                selectmode: 'byrow',
+                extendlastcol: 'scroll',
+                height: '600px',
+                primarykey: ['ORDR_BNO'],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                columns: [
+                    { caption: ['발주번호'], ref: 'ORDR_BNO', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['공종명'], ref: 'ORDR_NAME', width: '200px', style: 'text-align:center', type: 'output' },
+                    { caption: ['결재여부'], ref: 'ORDR_RCODE', width: '70px', style: 'text-align:center', type: 'output', hidden: true },
+                ]
+            },
+            grid_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '240px',
+                custompanel: ['refresh', 'save'],
+                columns: [
+                    { caption: ['지참물'], ref: 'BRCD_NAME', width: '340px', style: 'text-align:center', type: 'output' },
+                    { caption: ['선택여부'], ref: 'CHK', width: '90px', style: 'text-align:center', type: 'checkbox', typeinfo: { checkedvalue: '1', uncheckedvalue: '0' } },
+                ]
+            },
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_01.bind('click', 'viewX.mainGridCilck');
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.selectSite();
+    })
+</script>
+<style>
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>현설품의서</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        현장명
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="viewX.selectMainGrid()">
+        </sbux-select>
+        <sbux-button id="" name="" uitype="normal" text="발주내역작성"
+            onClick="">
+        </sbux-button>
+    </div>
+    <div class="content-container d_flex">
+        <div id="SBGridArea_01" class="flex-4"></div>
+        <div class="tab-container cocs-tabbox flex-6 ml10">
+            <!-- SBUx tab component -->
+            <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" jsondata-ref="viewX.TAB_PROPERTIES"
+                title-target-id-array="tab_01^tab_02^tab_03" title-text-array="tab_01^tab_02^tab_03"
+                is-close-icon="false" is-scrollable="false" is-draggable="false" onclick="viewX.moveTab(tab_norm)">
+            </sbux-tabs>
+            <div class="tab-content">
+                <!-- 일반정보 탭 -->
+                <div id="tab_01">
+                    발주번호
+                    <sbux-input id="ORDR_BNO" name="ORDR_BNO" uitype="text" grid-id="viewX.grid_01" disabled>
+                    </sbux-input>
+                    공종명
+                    <sbux-input id="ORDR_NAME" name="ORDR_NAME" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    기술구분
+                    <sbux-select id="select_gubu" name="select_gubu" uitype="single"
+                        jsondata-ref="viewX.gubuJson" jsondata-text="GUBU_NAME" jsondata-value="GUBU_CODE"
+                        onchange="">
+                    </sbux-select>
+                    등록공종
+                    <sbux-select id="" name="" uitype="single"
+                        jsondata-ref="" jsondata-text="" jsondata-value=""
+                        grid-id="viewX.grid_01"
+                        onchange="">
+                    </sbux-select>
+                    설명일시
+                    <sbux-input id="ORDR_PDATE" name="ORDR_PDATE" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    <sbux-input id="ORDR_STIME" name="ORDR_STIME" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    설명장소
+                    <sbux-input id="ORDR_SPLACE" name="ORDR_SPLACE" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    현장설명원
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    입회인
+                    <sbux-input id="CUST_OWNER" name="CUST_OWNER" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    현장설명원연락처
+                    <sbux-input id="ORDR_HYTEL" name="ORDR_HYTEL" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    현설지참물
+                    <div id="SBGridArea_02"></div>
+                    자재및공도구
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    현설특기사항
+                    <sbux-textarea id="" name="" uitype="normal" grid-id="viewX.grid_01"
+                        style="width: 800px; height: 140px">
+                    </sbux-textarea>
+                    첨부파일
+                    <sbux-button id="" name="" uitype="normal" text="찾아보기" grid-id="viewX.grid_01"
+                        onClick="">
+                    </sbux-button>
+                    <sbux-button id="" name="" uitype="normal" text="업로드" grid-id="viewX.grid_01"
+                        onClick="">
+                    </sbux-button>
+                </div>
+                <!-- 공사개요 탭 -->
+                <div id="tab_02">
+                    공사시작일
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    도급금액
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    공사종료일
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    실행금액
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    <sbux-checkbox id="" name="" uitype="normal" text="고용보험적용" true-value="1" false-value="0">
+                    </sbux-checkbox>
+                    면세율
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    <sbux-checkbox id="" name="" uitype="normal" text="퇴직공제부금적용" true-value="1" false-value="0">
+                    </sbux-checkbox>
+                    도급금액(VAT포함)
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    <sbux-checkbox id="" name="" uitype="normal" text="직영공사" true-value="1" false-value="0">
+                    </sbux-checkbox>
+                    실행금액(VAT포함)
+                    <sbux-input id="" name="" uitype="text" grid-id="viewX.grid_01">
+                    </sbux-input>
+                    현설일반사항
+                    <!-- Table -->
+                </div>
+                <!-- 입찰정보 탭 -->
+                <div id="tab_03">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

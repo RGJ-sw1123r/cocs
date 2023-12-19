@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGE010_DAO">
+
+    <select id="selectGubuGridData" resultType="HashMap">
+        SELECT GUBU_CODE, GUBU_NAME, DECODE(GUBU_GBN, 1, '직접공사비', 2, '간접공사비') GUBU_GBN,
+            DECODE(A.SILD_GUBU, NULL, 'N', 'Y') USED
+        FROM TBG_GUBU, (SELECT DISTINCT SILD_GUBU FROM VBG_SILD) A
+        WHERE GUBU_CODE = SILD_GUBU(+)
+        ORDER BY GUBU_CODE
+    </select>
+
+    <select id="selectLgojGridData" parameterType="HashMap" resultType="HashMap">
+        SELECT LGOJ_GUBU, LGOJ_CODE, LGOJ_NAME, DECODE(A.SILD_LGOJ, NULL, 'N', 'Y') USED
+        FROM TBG_LGOJ, (SELECT DISTINCT SILD_GUBU, SILD_LGOJ FROM VBG_SILD) A
+        WHERE LGOJ_GUBU = SILD_GUBU(+)
+            AND LGOJ_CODE = SILD_LGOJ(+)
+            <if test="GUBU != null">
+                AND LGOJ_GUBU = #{GUBU}
+            </if>
+        ORDER BY LGOJ_CODE
+    </select>
+    
+    <select id="selectMgojGridData" parameterType="HashMap" resultType="HashMap">
+        SELECT MGOJ_GUBU, MGOJ_LGOJ, MGOJ_CODE, MGOJ_NAME, DECODE(A.SILD_MGOJ, NULL, 'N', 'Y') USED
+        FROM TBG_MGOJ, (SELECT DISTINCT SILD_GUBU, SILD_LGOJ, SILD_MGOJ FROM VBG_SILD) A
+        WHERE MGOJ_GUBU = SILD_GUBU(+)
+            AND MGOJ_LGOJ = SILD_LGOJ(+)
+            AND MGOJ_CODE = SILD_MGOJ(+)
+            <if test="GUBU != null">
+                AND MGOJ_GUBU = #{GUBU}
+            </if>
+            <if test="LGOJ != null">
+                AND MGOJ_LGOJ = #{LGOJ}
+            </if>
+        ORDER BY MGOJ_CODE
+    </select>
+</mapper>

@@ -1,0 +1,134 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        gropJson: [
+            { text : '0. 업체평가', value : '0' },
+            { text : '1. 시공품질', value : '1' },
+            { text : '2. 안전관리', value : '2' },
+            { text : '3. 현장관리', value : '3' }
+        ],
+        saveGridData: function () {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/ORG050/grid_01/gridData';
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            var checkData = JSON.parse(sendData);
+
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_02', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(error);                       
+                }
+            }
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/ORG050/selectGrid';
+            var params = { GUBUN: $('#select_grop').val() };
+
+            exios.get(url, params).then((response) => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+                    return function () {
+                        if (showAlert !== false) {
+                            korbiztech.alert('MGS_GRID_GET_SUCCESS');
+                        }
+                    };
+                } catch (error) {
+                    korbiztech.alert('MGS_GRID_GET_FAIL');
+                    console.error(error);        
+                }
+            });
+        },
+        selectGrid: function () {
+            var params = { GUBUN: $('#select_grop').val() };
+            exios.get('/api/ORG050/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        // 검증 로직 추가 : 평가항목 점수 총합은 100점을 초과할 수 없음.
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                explorerbar: 'sort',
+                selectmode: 'byrow',
+                primarykey: ['GROP_GCODE'],
+                custompanel: ['toggleEditMode', 'exportExcel', 'refresh', 'add', 'delete', 'save'],
+                total: {
+                    type: 'grand',
+                    position: 'top',
+                    columns: {
+                        standard: [0],
+                        sum: [4],
+                    },
+                    grandtotalrow: {
+                        titlecol: 2,
+                        titlevalue: 'Total',
+                        style: 'background-color: rgb(146, 178, 197); font-weight: bold; color: rgb(255, 255, 255);',
+                    },
+                },
+                columns: [
+                    { caption: ['코드'], ref: 'GROP_GCODE', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['평가항목'], ref: 'GROP_NAME', width: '400px', style: 'text-align:left', type: 'input' },
+                    { caption: ['점수'], ref: 'GROP_ADDVAL', width: '100px', style: 'text-align:center', type: 'input',  format : '#.00' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.loadGridData();
+    })
+</script>
+<style>
+</style>
+<html>
+<div class="menuPath-wrap">
+    <h3>평가항목코드</h3>
+    <div class="menuPath-title"></div>
+</div>
+<div class="softbowl-form sortbox">
+    평가구분
+    <sbux-select id="select_grop" name="select_grop" uitype="single"
+        jsondata-ref="viewX.gropJson"
+        onchange="viewX.loadGridData()">
+    </sbux-select>
+</div>
+<div class="grid-container">
+    <div id="SBGridArea_01"></div>
+</div>
+</html>

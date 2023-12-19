@@ -1,0 +1,163 @@
+<script>
+    var viewX = {
+        rid_01: {}, grid_02: {}, grid_03: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {},
+        gubuJson: [],
+        companyJson: [
+            { text: '타사', value: '10' },
+            { text: '당사', value: '20' },
+        ],
+        selectGubu: function () {
+            exios.get("/api/ORA060/selectGubu").then((response) => {
+                viewX.gubuJson = response.data;
+                SBUxMethod.refresh("select_gubu");
+                viewX.selectGrid();
+            });
+        },
+        selectGrid: function () {
+            var params = { GONGCODE:  $('#select_gubu').val() };
+            viewX.grid_01.lockGrid(true);
+            exios.get("/api/ORA060/selectParentGrid", params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({focus: false});
+                viewX.grid_01.lockGrid(false);
+            });
+        },
+        radio_companyClick: function (radio_company) {
+            // TP: Third Party (타사)
+            // FP: First Party (당사)
+            if (radio_company == '10') {
+                console.log('타사');
+                // grid_03을 숨기고 grid_02를 보여준다.
+            } else if (radio_company == '20') {
+                console.log('당사');
+                // grid_02를 숨기고 grid_03을 보여준다.
+            }
+        },
+        parentGridClick: function () {
+            var nRow = viewX.grid_01.getRow();
+            var bsno = viewX.grid_01.getRowData(nRow).CUST_BSNO;
+            var params = { BSNO: bsno };
+
+            // 최초 조회 시에는 타사('10') 데이터를 조회함으로 가정
+            viewX.grid_02.lockGrid(true);
+            exios.get("/api/ORA060/selectChildGrid_TP", params).then((response) => {
+                viewX.gridData_02 = response.data;
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.refresh({focus: false});
+                viewX.grid_02.lockGrid(false);
+            });
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                extendlastcol: 'scroll',
+                custompanel: [''],
+                columns: [
+                    { caption: ['사업자번호'], ref: 'CUST_BSNO', width: '120px', style: 'text-align:center', type: 'output', format: {type:'string', rule: '###-##-#####'}, },
+                    { caption: ['업체명'], ref: 'CUST_NAME', width: '200px', style: 'text-align:left', type: 'output' },
+                ]
+            },
+            grid_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                custompanel: ['exportExcel'],
+                columns: [
+                    { caption: ['건설사명'], ref: 'SILD_OWNR', width: '100px', style: 'text-align:left', type: 'input' },
+                    { caption: ['공사명'], ref: 'SILD_CONNM', width: '130px', style: 'text-align:left', type: 'input' },
+                    { caption: ['면허명'], ref: 'PERM_NAME', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['계약금액'], ref: 'SILD_CONTAMT', width: '100px', style: 'text-align:right', type: 'input' },
+                    { caption: ['계약년도'], ref: 'SILD_YEAR', width: '60px', style: 'text-align:center', type: 'input' },
+                ]
+            },
+            grid_03: {
+                parentid: 'SBGridArea_03',
+                id: 'viewX.grid_03',
+                jsonref: 'viewX.gridData_03',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                custompanel: ['exportExcel'],
+                columns: [
+                    { caption: ['현장명'], ref: 'SITE_NAME', width: '180px', style: 'text-align:left', type: 'input' },
+                    { caption: ['공사명'], ref: 'HIST_GNAME', width: '130px', style: 'text-align:left', type: 'input' },
+                    { caption: ['공사기간'], ref: 'HIST_TERM', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['도급금액'], ref: 'HIST_DOAMT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['실행금액'], ref: 'HIST_SILAMT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['견적금액'], ref: 'HIST_ESTAMT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['계약금액'], ref: 'HIST_CONTAMT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['순위'], ref: 'HIST_RANK', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['낙찰여부'], ref: 'HIST_YN', width: '100px', style: 'text-align:center', type: 'input' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_03);
+        viewX.grid_01.bind('click', 'viewX.parentGridClick');
+        SBUxMethod.set('radio_company', '10');
+        viewX.selectGubu();
+    })
+</script>
+<style>
+    .grid-container {
+        display: flex;
+    }
+
+    #SBGridArea_01 {
+        flex: 3.5;
+    }
+    
+    #SBGridArea_02 {
+        flex: 6.5;
+        margin-left: 10px;
+    }
+
+    #SBGridArea_03 {
+        display: none;
+    }
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>협력업체공사실적</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        조회구분
+        <sbux-radio id="radio_company" name="radio_company" uitype="normal"
+            jsondata-ref="viewX.companyJson"
+            onclick="viewX.radio_companyClick(radio_company)">
+        </sbux-radio>
+        기술구분
+        <sbux-select id="select_gubu" name="select_gubu" uitype="single"
+            jsondata-ref="viewX.gubuJson" jsondata-text="GONG_NAME" jsondata-value="GONG_CODE"
+            onchange="viewX.selectGrid()">
+        </sbux-select>
+        업체명
+        <sbux-input id="input_custnm" name="input_custnm" uitype="text" style="width: 300px;"
+            onkeyenter="">
+        </sbux-input>
+        단위 : 천원
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+        <div id="SBGridArea_02"></div>
+        <div id="SBGridArea_03"></div>
+    </div>
+</body>

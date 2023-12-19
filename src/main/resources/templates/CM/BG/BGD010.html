@@ -1,0 +1,211 @@
+<script>
+    var viewX = {
+        grid_01: [], grid_02: [],
+        gridData_01: [], gridData_02: [],
+        treeData_01: [],
+        siteJson: [],
+        chsuJson: [],
+        dateJson: [],
+        edateJson: [],
+        selectSite: function () {
+            exios.get('/api/BGD010/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh("select_site");
+                viewX.selectParentGrid();
+            });
+        },
+        selectDate: function () {
+            exios.get('/api/BGD010/selectDate').then((response) => {
+                viewX.dateJson = response.data;
+                SBUxMethod.refresh("select_sdate");
+                SBUxMethod.refresh("select_edate");
+            });
+        },
+        selectParentGrid: function () {
+            // initial tree
+            viewX.treeData_01 = null;
+            SBUxMethod.refresh("tree_01");
+            // initial child grid
+            viewX.gridData_02 = null;
+            viewX.grid_02.setGridData(viewX.gridData_02, false)
+            viewX.grid_02.refresh({'focus': false});
+
+            var params = {
+                SITE:  $('#select_site').val(),
+                SDATE: $('#select_sdate').val(),
+                EDATE: $('#select_edate').val()
+            };
+            exios.get('/api/BGD010/selectParentGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.setColDisabled(5, true);
+                viewX.grid_01.setColDisabled(6, true);
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        selectChildGrid: function () {
+            var nRow = viewX.grid_01.getRow();
+            var rowData = viewX.grid_01.getRowData(nRow);
+            if (nRow > 0) {
+                var params = {
+                    SITE: rowData.SADD_SITE,
+                    SEQ: rowData.SADD_SEQ
+                };
+                exios.get('/api/BGD010/selectChildGrid', params).then((response) => {
+                    console.log(response.data);
+                    viewX.gridData_02 = response.data;
+                    viewX.grid_02.setGridData(viewX.gridData_02, false)
+                    viewX.grid_02.refresh({'focus': false});
+                });
+            }
+        },
+        selectTree: function () {
+            var nRow = viewX.grid_01.getRow();
+            var rowData = viewX.grid_01.getRowData(nRow);
+            if (nRow > 0) {
+                var params = {
+                    SITE: rowData.SADD_SITE,
+                    SEQ: rowData.SADD_SEQ
+                };
+                exios.get("/api/BGD010/selectTree", params).then((response) => {
+                    viewX.treeData_01 = response.data;
+                    SBUxMethod.refresh("tree_01");
+                });
+            }
+        },
+        parentGridClick: function () {
+            viewX.selectTree();
+            viewX.selectChildGrid();
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                height: '360px',
+                selectmode: 'byrow',
+                extendlastcol: 'scroll',
+                primarykey: [''],
+                custompanel: ['add'],
+                columns: [
+                    { caption: ['품의년월'], ref: 'SADD_YYMM', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['실행차수'], ref: 'SADD_CHSU', width: '80px', style: 'text-align:center', type: 'output' },
+                    { caption: ['명칭'], ref: 'SADD_NAME', width: '260px', style: 'text-align:left', type: 'output' },
+                    { caption: ['승인여부'], ref: 'SADD_OK', width: '80px', style: 'text-align:center', type: 'checkbox', typeinfo : {checkedvalue : '1', uncheckedvalue : null} },
+                    { caption: ['실행적용여부'], ref: 'SADD_UPYN', width: '100px', style: 'text-align:center', type: 'checkbox', typeinfo : {checkedvalue : '1', uncheckedvalue : null} },
+                ]
+            },
+            grid_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['update', 'seq'],
+                height: '360px',
+                primarykey: ['CSIL_ITEM'],
+                custompanel: ['add'],
+                columns: [
+                    { caption: ['item', 'item'], ref: 'CSIL_ITEM', width: '50x', style: 'text-align:center' },
+                    { caption: ['명칭', '명칭'], ref: 'CSIL_NAME', width: '160px', style: 'text-align:left' },
+                    { caption: ['규격', '규격'], ref: 'CSIL_SIZE', width: '120px', style: 'text-align:left' },
+                    { caption: ['단위', '단위'], ref: 'CSIL_UNIT', width: '50px', style: 'text-align:center' },
+                    { caption: ['도급', '수량'], ref: 'SILD_DQTY', width: '80px', style: 'text-align:right' },
+                    { caption: ['도급', '단가'], ref: 'SILD_DPRI', width: '90px', style: 'text-align:right' },
+                    { caption: ['도급', '금액'], ref: 'SILD_DAMT', width: '100px', style: 'text-align:right' },
+                    { caption: ['실행', '수량'], ref: 'SILD_SQTY', width: '80px', style: 'text-align:right' },
+                    { caption: ['실행', '단가'], ref: 'SILD_SPRI', width: '90px', style: 'text-align:right' },
+                    { caption: ['실행', '금액'], ref: 'SILD_SAMT', width: '100px', style: 'text-align:right' },
+                    { caption: ['발주예정\n최종수량', '발주예정\n최종수량'], ref: 'CSIL_SQTY', width: '90px', style: 'text-align:right' },
+                    { caption: ['품의구분', '품의구분'], ref: 'GITA_NAME', width: '90px', style: 'text-align:center' },
+                    { caption: ['비목구분', '비목구분'], ref: 'BMOK_NAME', width: '90px', style: 'text-align:center' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_01.bind("click", "viewX.parentGridClick");
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.selectSite();
+        viewX.selectDate();
+    });
+</script>
+<style>
+     .search-container {
+        margin: 10px;
+    }
+
+    .grid-container {
+        margin: 10px;
+    }
+    
+    .top-grid {
+        display: flex;
+    }
+
+    #SBGridArea_01 {
+        flex: 7;
+    }
+
+    #tree-container {
+        flex: 3;
+        margin-left: 5px;
+        background-color: floralwhite;
+    }    
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>실정보고품의</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <span id="text">현장명</span>
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson"
+            jsondata-text="SITE_NAME"
+            jsondata-value="SITE_CODE"
+            onchange="viewX.selectParentGrid()">
+        </sbux-select>
+        <span id="text">(차수 </span>
+        <sbux-label id="label_chsu" name="label_chsu" uitype="normal" text=""></sbux-label>
+        <span id="text">차)</span>
+        <span id="text">품의년월</span>
+        <sbux-select id="select_sdate" name="select_sdate" uitype="single"
+            jsondata-ref="viewX.dateJson"
+            jsondata-text="YM"
+            jsondata-value="YYYYMM"
+            onchange="viewX.selectParentGrid()">
+        </sbux-select>
+        ~
+        <sbux-select id="select_edate" name="select_edate" uitype="single"
+            jsondata-ref="viewX.dateJson"
+            jsondata-text="YM"
+            jsondata-value="YYYYMM"
+            onchange="viewX.selectParentGrid()">
+        </sbux-select>
+        <sbux-button id="" name="" uitype="normal" text="변경사유"
+            onClick="" class="btn_s_edit">
+        </sbux-button>
+        <sbux-button id="" name="" uitype="normal" text="품의내역"
+            onClick="" class="btn_s_edit">
+        </sbux-button>
+        <sbux-button id="" name="" uitype="normal" text="출력"
+            onClick="" class="btn_print">
+        </sbux-button>
+    </div>
+    <div class="grid-container">
+        <div class="top-grid">
+            <div id="SBGridArea_01"></div>
+            <div id="tree-container">
+                <sbux-tree id="tree_01" name="tree_01" uitype="normal" empty-message="데이터가 존재하지 않습니다."
+                    jsondata-ref="viewX.treeData_01"
+                    onclick="viewX.treeClick()">
+                </sbux-tree>
+            </div>
+        </div>
+        <div class="bottom-grid">
+            <div id="SBGridArea_02"></div>
+        </div>
+    </div>
+</body>

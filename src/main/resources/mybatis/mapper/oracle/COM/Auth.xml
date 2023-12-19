@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.COM.dao.Auth_DAO">
+
+	<select id="findOne_sample" parameterType="String" resultType="com.korbiztech.product.cocs.COM.vo.MemberVO">
+		SELECT LOGIN_ID
+		     , USERS_PW
+		  FROM SYTB0100
+		 WHERE LOGIN_ID = #{loginId}
+	</select>
+
+	<select id="findOne" parameterType="String" resultType="com.korbiztech.product.cocs.COM.vo.MemberVO">
+		   SELECT A.USERS_ID
+		        , A.USERS_NM
+		        , A.BUSEO_CD
+		        , A.JIKWI_ID
+		        , NVL(B.AUNTT_KB, '01') AS OFFICE
+		        , B.COSTT_KB
+		        , TO_CHAR(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') || ' ' || TO_CHAR(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul', 'HH24:MI:SS') AS NOW
+		        , A.CORP_KB
+		        , A.MASTR_KB
+		        , B.BUSEO_YA
+		        , C.SAEOB_NO
+		        , C.DEALR_NM
+		        , A.LOGIN_ID
+		        , A.USERS_PW
+		     FROM SYTB0100 A
+		LEFT JOIN ( SELECT 'C' AS AUTH_KB
+		                 , BUSEO_CD
+		                 , AUNTT_KB
+		                 , COSTT_KB
+		                 , BUSEO_YA
+		              FROM AXTB0300 ) B
+		       ON A.BUSEO_CD = B.BUSEO_CD
+		      AND A.AUTH_KB = B.AUTH_KB
+		LEFT JOIN ( SELECT SAEOB_NO
+		                 , DEALR_NM
+		              FROM AXTB1000 A
+		              JOIN AXTB1100 B
+		                ON A.GITAA_NM = B.SAEOB_NO
+		             WHERE ITEMM_KB = 'A51'
+		               AND GITAA_CD = '01' ) C
+		       ON 1 = 1
+		    WHERE A.LOGIN_ID = #{loginId}
+		      AND ( A.AUTH_KB = 'W' OR A.AUTH_ALL = 'Y' )
+		      AND A.RETIRE_KB = 'N'
+	</select>
+
+</mapper>

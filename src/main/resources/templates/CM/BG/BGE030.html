@@ -1,0 +1,82 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        selectSite: function () {
+            exios.get('/api/BGE030/selectSite').then((response) => {
+		        viewX.siteJson = response.data;
+		        SBUxMethod.refresh("select_site");
+                viewX.selectGrid();
+            });
+        },
+        selectGrid: function () {
+            var params = { SITE:  $('#select_site').val() };
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/BGE030/selectGrid', params).then((response => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({focus: false});
+                viewX.grid_01.lockGrid(false);
+            }));
+        },
+        button_copyGJClick: function () {
+            console.log('공종복사');
+        },
+        button_copySiteClick: function () {
+            console.log('현장복사');
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                custompanel: ['exportExcel', 'refresh', 'delete', 'save'],
+                columns: [
+                    { caption: ['계정코드'], ref: 'ACCNT_CD', width: '120px', style: 'text-align:center', type: 'output' },
+                    { caption: ['계정명'], ref: 'ACCNT_YA', width: '300px', style: 'text-align:left', type: 'output' },
+                    // 기술구분 수정 시 새 팝업창 구현 필요
+                    { caption: ['기술구분'], ref: 'WGOJ_GUBU', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['공구'], ref: 'WGOJ_GOGU', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['대공종'], ref: 'WGOJ_LGOJ', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['중공종'], ref: 'WGOJ_MGOJ', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['ITEM'], ref: 'WGOJ_ITEM', width: '100px', style: 'text-align:center', type: 'output' },
+                    // 비목구분 combo 데이터 세팅 필요
+                    { caption: ['비목구분'], ref: 'WGOJ_BMOK', width: '100px', style: 'text-align:center', type: 'combo' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectSite();
+    })
+</script>
+<style>
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>별도현장원가공종</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <span id="text">현장명</span>
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="viewX.selectGrid()">
+        </sbux-select>
+        <sbux-button id="button_copyGJ" name="button_copyGJ" uitype="normal" text="공종복사"
+            onClick="viewX.button_copyGJClick()">
+        </sbux-button>
+        <sbux-button id="button_copySite" name="button_copySite" uitype="normal" text="현장복사"
+            onClick="viewX.button_copySiteClick()">
+        </sbux-button>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</html>

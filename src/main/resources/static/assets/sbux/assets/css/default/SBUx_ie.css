@@ -1,0 +1,75 @@
+.sbux-sel-chk-btn {
+	padding: 4px 4px 4px 5px;
+	background : none
+}
+
+/*select.sbux-sel {background:none;}*/
+
+select[disabled].sbux-sel,select.disabled.sbux-sel,select[readonly].sbux-sel,select.readonly.sbux-sel {background: #efefef}
+.sbux-sel option:checked, .sbux-sel option:active {
+    color: #000 !important;
+    background: none;
+}
+
+.sbux-inp-btn-group .sbux-inp-fr-span > button.glyphicon span, .sbux-inp-btn-group .sbux-inp-bk-span > button.glyphicon span {
+	vertical-align: middle;
+}
+
+table.sbux-pik-pop-day thead th .sbux-pik-sel-wrap .sbux-pik-sel {padding:0 15px 0 2px;}
+
+/* 2019-03-08 ahn */
+ul.sbux-tre-bd li.sbux-tre-item-chl-wrap ul.sbux-tre-item-chl-chl:before {
+	top: -9px !important;
+	height: 100% !important;
+}
+
+.sbux-sel-form > div.sbux-sel-form-wrap button.sbux-sel-form-btn i {
+	/* padding-top:5px; */
+	padding-bottom:6px;
+}
+/***********************************************************/
+/* textarea resize */
+/***********************************************************/
+.sbux-resize-wrap {
+	position: relative !important;
+}
+.ui-resizable-se {
+	bottom: 17px;
+}
+.ui-icon-gripsmall-diagonal-se {
+	/*background-position: -64px -224px;*/
+}
+.ui-icon, .ui-widget-content .ui-icon {
+	/*background-image: url(../images/ui-icons_444444_256x240.png);*/
+	background-image: url(../images/resize-icon.png);
+}
+.ui-icon {
+	width: 16px;
+	height: 16px;
+}
+.ui-resizable-se {
+	cursor: se-resize;
+	right: 1px;
+}
+.ui-resizable-handle {
+	position: absolute;
+	font-size: 0.1px;
+	display: block;
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.ui-icon {
+	vertical-align: middle;
+	margin-top: -.25em;
+	text-indent: -99999px;
+	overflow: hidden;
+	background-repeat: no-repeat;
+}
+
+input.sbux-inp-input.sbux-inp-ie-clear ::-ms-clear , input.sbux-inp-input.sbux-inp-ie-clear ::-ms-reveal {display: none;}
+
+/*2021-03-03 select 화살표 제거*/
+select::-ms-expand {display:none;}
+
+/*2021-03-04 Redmine #5365*/
+.sbux-gal-close{padding:0;margin:0;}

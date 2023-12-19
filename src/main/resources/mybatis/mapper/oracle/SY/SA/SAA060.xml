@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.SY.dao.SAA060_DAO">
+	
+	<select id="getCategoryGridData" parameterType="String" resultType="HashMap">
+		  SELECT COMM_GBN
+		       , COMM_GBNM
+		    FROM TCM_COMM
+		   WHERE COMM_OFFC = '01'
+		     AND COMM_LCODE||COMM_MCODE = '0000'
+		ORDER BY COMM_GBN
+	</select>
+	
+	<insert id="saveCategoryInsertData">
+		INSERT ALL
+		<foreach collection="insertList" item="item">
+			INTO TCM_COMM 
+	    	( COMM_OFFC, COMM_GBN, COMM_LCODE, COMM_MCODE, COMM_GBNM, COMM_INUSR )
+	    	VALUES
+			(
+				'01',
+				#{item.COMM_GBN},
+				'00',
+				'00',
+				#{item.COMM_GBNM},
+				'mumu'
+			)
+		</foreach>
+		SELECT 1 FROM DUAL
+	</insert>
+	
+	<update id="saveCategoryUpdateData">
+		<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+			UPDATE TCM_COMM
+			   SET COMM_GBNM = #{item.COMM_GBNM}
+			     , COMM_UPDAY = SYSDATE
+			     , COMM_UPUSR = 'mumu'
+			 WHERE COMM_OFFC = '01'
+			   AND COMM_LCODE = '00'
+			   AND COMM_MCODE = '00'
+			   AND COMM_GBN =  #{item.COMM_GBN}
+	    </foreach>
+	</update>
+		
+	<delete id="saveCategoryDeleteData">
+		DELETE
+		  FROM TCM_COMM
+		<where>
+			<foreach collection="deleteList" item="item" open="" close="" separator="OR">
+			   ( COMM_OFFC = '01' AND COMM_LCODE = '00' AND COMM_MCODE = '00' AND COMM_GBN =  #{item.COMM_GBN} )
+	    	</foreach>
+		</where>
+	</delete>
+	
+	<select id="getMajorCategoryGridData" parameterType="String" resultType="HashMap">
+		  SELECT COMM_GBN
+		       , COMM_LCODE
+		       , COMM_LNAME
+		    FROM TCM_COMM
+		   WHERE COMM_OFFC = '01'
+		     AND COMM_GBN = '01'
+		     AND COMM_LCODE <![CDATA[<>]]> '00'
+		     AND COMM_MCODE = '00'
+		ORDER BY COMM_GBN
+	</select>
+	
+</mapper>

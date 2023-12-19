@@ -1,0 +1,209 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        chsuJson: [],
+        selectSite: function () {
+            exios.get('/api/BGA050/selectSite').then(response => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectChsu();
+            });
+        },
+        selectChsu: function () {
+            SBUxMethod.refresh('label_comp');
+            var siteCode = $('#select_site').val();
+            var params = { SITE_CODE: siteCode };
+
+            exios.get('/api/BGA050/selectChsu', params).then(response => {
+                viewX.chsuJson = response.data;
+                SBUxMethod.refresh('select_chsu');
+
+                if (viewX.chsuJson.length > 0) {
+                    if (viewX.chsuJson[0].COMP === '1') {
+                        SBUxMethod.set('label_comp', '확정');
+                    } else {
+                        SBUxMethod.set('label_comp', '미확정');
+                    }
+                }
+                viewX.selectGrid();
+            });
+        },
+        selectGrid: function () {
+            var siteCode = $('#select_site').val();
+            var chsu = $('#select_chsu').val();
+            var params = { SITE_CODE: siteCode, CHSU: chsu };
+
+            exios.get('/api/BGA050/selectGrid', params).then(response => {
+                viewX.gridData_01 = response.data;
+                // viewX.grid_01.closeTreeNodeLevel(1);
+                viewX.grid_01.refresh({'focus': false});
+                // viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.treeSetStyles();
+                viewX.selectAmt();
+                viewX.setSortIcon();
+            });
+        },
+        selectAmt: function () {
+            siteCode = $("#select_site").val();
+            var params = { SITE_CODE: siteCode };
+            
+            exios.get('/api/BGA050/selectAmt', params).then(response => {
+                SBUxMethod.set('input_damt', response.data[0].SITE_DOAMT);
+                SBUxMethod.set('input_samt', response.data[0].SITE_SIAMT);
+            });
+        },
+        siteChange: function () {
+            viewX.selectChsu();
+        },
+        chsuChange: function () {
+            viewX.selectGrid();
+        },
+        treeSetStyles: function () {
+            var bgColors = ["#FFCCFF", "#8FF5C2", "#D9FDDF", "#F9FCBE", "#D8D8FE", "#E3E3E3"];
+            
+            viewX.gridData_01.forEach((element, index) => {
+				const iLevel = element.ILEVEL;
+				viewX.grid_01.removeRowStyles(index + 2, 'data');
+				if (iLevel >= 0 && iLevel < bgColors.length) {
+					element.background = bgColors[iLevel];
+				}
+			});
+			
+			const totalRows = viewX.grid_01.getRows();
+			for (let i = 0; i < totalRows - 2; i++) {
+				const rowData = viewX.grid_01.getRowData(i + 2);
+				const backgroundColor = rowData.background;
+  				viewX.grid_01.setRowStyles(i + 2, `background: ${backgroundColor};`, 'data');
+			}
+        },
+        checkbox_priceClick: function () {
+            var priceToggle = SBUxMethod.get('checkbox_price').checkbox_price;
+            if (priceToggle) {
+                viewX.grid_01.setColHidden(5, false);
+                viewX.grid_01.setColHidden(6, false);
+                viewX.grid_01.setColHidden(8, false);
+                viewX.grid_01.setColHidden(9, false);
+                viewX.grid_01.setColHidden(12, false);
+                viewX.grid_01.setColHidden(14, false);
+                viewX.grid_01.setColHidden(16, false);
+                viewX.grid_01.setColHidden(18, false);
+                viewX.grid_01.setColHidden(21, false);
+                viewX.grid_01.setColHidden(22, false);
+                viewX.grid_01.setColHidden(24, false);
+            } else {
+                viewX.grid_01.setColHidden(5, true);
+                viewX.grid_01.setColHidden(6, true);
+                viewX.grid_01.setColHidden(8, true);
+                viewX.grid_01.setColHidden(9, true);
+                viewX.grid_01.setColHidden(12, true);
+                viewX.grid_01.setColHidden(14, true);
+                viewX.grid_01.setColHidden(16, true);
+                viewX.grid_01.setColHidden(18, true);
+                viewX.grid_01.setColHidden(21, true);
+                viewX.grid_01.setColHidden(22, true);
+                viewX.grid_01.setColHidden(24, true);
+            }
+        },
+        checkbox_allTreeClick: function () {
+            var allTreeToggle = SBUxMethod.get('checkbox_allTree').checkbox_allTree;
+            if (allTreeToggle) {
+                viewX.grid_01.openTreeNodeAll(true, viewX.treeSetStyles());
+            } else {
+                viewX.grid_01.closeTreeNodeAll(false);
+            }
+        },
+        setSortIcon: function () {
+            // Warning : 정렬되지 않은 default 상태에서는 표기 되지 않습니다.
+            viewX.grid_01.sortingIcon();
+        }
+    }
+
+    $(function() {
+        viewX.selectSite();
+        var GRID_PROPERTIES = {
+            grid_01 : {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                frozencols: 3,
+                height: '600px',
+                selectmode: 'byrow',
+                explorerbar:'sort',
+                useinitsorting: true,
+                custompanel: [],
+                tree: {
+                    col: 1,
+                    levelref: 'ILEVEL',
+                },
+                columns: [
+                    { caption: ['코드', '코드'], ref: 'ICODE', width: '200px', style: 'text-align:left', type: 'output', sortable: false },
+                    { caption: ['명칭', '명칭'], ref: 'INAME', width: '200px', style: 'text-align:left', type: 'output', sortable: false },
+                    { caption: ['규격', '규격'], ref: 'ISIZE', width: '160px', style: 'text-align:left', type: 'output', sortable: false },
+                    { caption: ['단위', '단위'], ref: 'IUNIT', width: '60px', style: 'text-align:center', type: 'output', sortable: false },
+                    { caption: ['도급수량', '도급수량'], ref: 'DQTY', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "0.000", emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['도급단가', '도급단가'], ref: 'DPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['도급금액', '도급금액'], ref: 'AMT1', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행금액', '실행수량'], ref: 'SQTY', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "0.000", emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행금액', '실행단가'], ref: 'SPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행금액', '실행금액'], ref: 'AMT2', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['보할', '보할'], ref: 'BOHAL', width: '60px', style: 'text-align:right', type: 'output', sortable: false },
+                    { caption: ['실행', '재료비단가'], ref: 'SMPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '재료비금액'], ref: 'AMT3', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '노무비단가'], ref: 'SLPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '노무비금액'], ref: 'AMT4', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '외주재료비단가'], ref: 'SOMPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '외주재료비금액'], ref: 'AMT5', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '외주노무비단가'], ref: 'SOLPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '외주노무비금액'], ref: 'AMT6', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '외주경비단가'], ref: 'SOAPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '외주경비금액'], ref: 'AMT7', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '장비비단가'], ref: 'SEPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '장비비금액'], ref: 'AMT8', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '경비단가'], ref: 'SAPRI', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, hidden: true, sortable: false },
+                    { caption: ['실행', '경비금액'], ref: 'AMT9', width: '120px', style: 'text-align:right', type: 'output', format: { type: "number", rule: "#,###",  emptyvalue: "0" }, sortable: false },
+                    { caption: ['실행', '호표'], ref: 'SILD_SEQ', width: '60px', style: 'text-align:right', type: 'output' },
+                ]
+            },
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_01.bind('aftertreeopened', 'viewX.treeSetStyles');
+        viewX.grid_01.bind('aftertreeclosed', 'viewX.treeSetStyles');
+    })
+</script>
+<style>
+    .con_wrap .cocs-table-list table tr:nth-child(even) td,
+    .con_wrap .cocs-table-list table tr:nth-child(odd) td { background: inherit; }
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>실행내역조회</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <span id="text">현장명</span>
+        <sbux-select id="select_site" name="select_site" uitype="single" auto-size="true"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="viewX.siteChange()">
+        </sbux-select>
+        <span id="text">차수</span>
+        <sbux-select id="select_chsu" name="select_chsu" uitype="single" auto-size="true"
+            jsondata-ref="viewX.chsuJson" jsondata-text="CHASU" jsondata-value="CHSU"
+            onchange="viewX.chsuChange()">
+        </sbux-select>
+        <sbux-label id="label_comp" name="label_comp" uitype="normal" style="font-size: 14px; font-weight: bold;">
+        </sbux-label>
+        <span id="text">도급금액</span>
+        <sbux-input id="input_damt" name="input_damt" uitype="text" mask = "{ 'alias': 'numeric' , 'autoGroup': 3 , 'groupSeparator': ',' }" style="width: 120px;" disabled></sbux-input>
+        <span id="text">실행금액</span>
+        <sbux-input id="input_samt" name="input_samt" uitype="text" mask = "{ 'alias': 'numeric' , 'autoGroup': 3 , 'groupSeparator': ',' }" style="width: 120px;" disabled></sbux-input>
+        <sbux-checkbox id="checkbox_price" name="checkbox_price" uitype="normal" text="단가표시" onClick="viewX.checkbox_priceClick"></sbux-checkbox>
+        <sbux-checkbox id="checkbox_allTree" name="checkbox_allTree" uitype="normal" text="전체" onClick="viewX.checkbox_allTreeClick"></sbux-checkbox>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</html>

@@ -1,0 +1,140 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {}, grid_04: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {}, gridData_04: {},
+        siteJson: [],
+        selectSite: function() {
+
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '720px',
+                selectmode: 'byrow',
+                extendlastcol: 'scroll',
+                primarykey: '',
+                custompanel: '',
+                columns: [
+                    { caption: ['발주번호'], ref: 'ORDR_BNO', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['공사명'], ref: 'ORDR_NAME', width: '200px', style: 'text-align:left', type: 'output' },
+                ]
+            },
+            grid_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '240px',
+                extendlastcol: 'scroll',
+                primarykey: '',
+                custompanel: '',
+                columns: [
+                    { caption: ['사업자번호'], ref: 'CUST_BSNO', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['업체명'], ref: 'CUST_NAME', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['대표자'], ref: 'CUST_OWNER', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['대표면허'], ref: 'PERM_NAME', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['시공능력'], ref: 'LICE_POWER', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['도급순위'], ref: 'LICE_RANK3', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['업체경력'], ref: 'LICE_CAREER', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['등록인'], ref: 'CALL_RECOMMNM', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['등록부서'], ref: 'CALL_RECBSNM', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['SMS결과'], ref: 'CALL_SMSHYUNSUL', width: '90px', style: 'text-align:center', type: 'output' },
+                ]
+            },
+            grid_03: {
+                parentid: 'SBGridArea_03',
+                id: 'viewX.grid_03',
+                jsonref: 'viewX.gridData_03',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '240px',
+                extendlastcol: 'scroll',
+                primarykey: '',
+                custompanel: '',
+                columns: [
+                    { caption: ['현장코드'], ref: 'HIST_SITE', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['현장명'], ref: 'SITE_NAME', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['공사기간'], ref: 'HIST_TERM', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['도급금액'], ref: 'HIST_DOAMT', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['실행금액'], ref: 'HIST_SILAMT', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['계약금액'], ref: 'HIST_CONTAMT', width: '90px', style: 'text-align:center', type: 'output' },
+                ]
+            },
+            grid_04: {
+                parentid: 'SBGridArea_04',
+                id: 'viewX.grid_04',
+                jsonref: 'viewX.gridData_04',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '240px',
+                extendlastcol: 'scroll',
+                primarykey: '',
+                custompanel: '',
+                columns: [
+                    { caption: ['건설사'], ref: 'OWNR_NAME', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['공종명'], ref: 'SILD_CONNM', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['면허코드'], ref: 'PERM_CODE', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['면허명'], ref: 'PERM_NAME', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['계약금액'], ref: 'SILD_CONTAMT', width: '90px', style: 'text-align:center', type: 'output' },
+                    { caption: ['계약년도'], ref: 'SILD_YEAR', width: '90px', style: 'text-align:center', type: 'output' },
+                ]
+            },
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_01.bind('click', 'viewX.mainGridCilck');
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_03);
+        viewX.grid_04 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_04);
+        viewX.selectSite();
+    })
+</script>
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 4fr 6fr; /* 두 개의 열을 가로로 나눔 */
+        grid-template-rows: auto; /* 자동으로 높이 조절 */
+        grid-gap: 10px; /* 요소 사이의 간격 설정 */
+    }
+
+    #left-grid {
+        grid-column: 1; /* 첫 번째 열에 배치 */
+    }
+
+    #right-grid {
+        grid-column: 2; /* 두 번째 열에 배치 */
+    }
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>입찰대상업체등록</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        현장명
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="">
+        </sbux-select>
+        <sbux-button id="" name="" uitype="normal" text="현설공고"
+            onClick="">
+        </sbux-button>
+    </div>
+    <div class="grid-container">
+        <div id="left-grid">
+            <div id="SBGridArea_01"></div>
+        </div>
+        <div id="right-grid">
+            <div id="SBGridArea_02"></div>
+            <div id="SBGridArea_03"></div>
+            <div id="SBGridArea_04"></div>
+        </div>
+    </div>
+</body>

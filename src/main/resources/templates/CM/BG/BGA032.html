@@ -1,0 +1,27 @@
+    <div th:fragment="modal_02" id="modal_02">
+        <div id="modal_02_body">
+            <table>
+                <td>기술구분</td>
+                <td>
+                    <sbux-select id="select_add_gubu" name="select_add_gubu" uitype="single"
+                        jsondata-ref="viewX.gubuCodeJson_01"
+                        jsondata-text="GUBU_NAME"
+                        jsondata-value="GUBU_CODE"
+                        onchange="viewX.addGubuChange()">
+                    </sbux-select>
+                </td>
+                <td>명칭</td>
+                <td>
+	                <sbux-input id="addGJ_input_itemName" name="addGJ_input_itemName" uitype="text"
+	                    onkeyenter="viewX.addGJ_itemNameSearch(addGJ_input_itemName)">
+	                </sbux-input>
+                </td>
+            </table>
+            <div id="SBGridArea_03" style="height: 480px"></div>
+        </div>
+        <div id="modal_02_footer">
+            <sbux-button id="modal_02_button_01" name="modal_02_button_01" uitype="normal" text="추가" button-color="blue"
+                onclick="viewX.modal_addItemClick()">
+            </sbux-button>
+        </div>
+    </div>

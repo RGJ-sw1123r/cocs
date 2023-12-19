@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA080SI_DAO">
+    <select id="selectList" parameterType="HashMap" resultType="HashMap">
+        SELECT AUNTT_KB, 
+               TXSAE_NO, 
+               SAUPJ_NM, 
+               DEALR_DP, 
+               BUPIN_NO, 
+               UPDAE_NY, 
+               UPJON_NY, 
+               ADDRE_NY, 
+               WOOPY_NO, 
+               TELEP_NO, 
+               SEMOO_NM, 
+               SEMOO_CD, 
+               TNABU_CD, 
+               LACHG_DT, 
+               SAYNG_ED, 
+               SAYNG_ST, 
+               SAUPJ_EM,
+               (SELECT DEALR_NM
+                FROM AXTB1100
+                WHERE SAEOB_NO = TNABU_CD) AS TNABU_NM
+        FROM   AXTB0900
+        <where>  
+        <if test="dued==1">
+        AND    TXSAE_NO LIKE '%'||  #{code} ||'%' 
+        AND    TO_DATE(SAYNG_ED, 'YYYY-MM-DD') <![CDATA[> ]]> sysdate
+        OR     SAYNG_ED is null
+        </if>
+        <if test="dued==0">
+        AND    TXSAE_NO LIKE '%'||  #{code} ||'%' 
+        </if>
+        </where>
+    </select>
+        
+    <select id="selectedSAUPJ_NM" parameterType="HashMap" resultType="HashMap">
+        SELECT DEALR_NM
+        FROM   AXTB1100
+        WHERE  SAEOB_NO = #{TNABU_CD}
+    </select>
+
+    <update id="saveGrid01UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0900 SET
+               TXSAE_NO = #{item.TXSAE_NO}, 
+               ADDRE_NY = #{item.ADDRE_NY},
+               TELEP_NO = #{item.TELEP_NO}, 
+               SEMOO_NM = #{item.SEMOO_NM}, 
+               SEMOO_CD = #{item.SEMOO_CD}, 
+               TNABU_CD = #{item.TNABU_CD}, 
+               SAYNG_ED = #{item.SAYNG_ED}, 
+               SAYNG_ST = #{item.SAYNG_ST}
+        WHERE  SAUPJ_NM = #{item.SAUPJ_NM}  
+        AND    AUNTT_KB = #{item.AUNTT_KB}    
+        </foreach>
+    </update>
+
+    <update id="saveGrid01AttachUpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB1100 SET
+               SAEOB_NO = #{item.TXSAE_NO},
+               ADDRE_NY = #{item.ADDRE_NY},
+               TELEP_NO = #{item.TELEP_NO},
+               SDATE_DT = #{item.SAYNG_ST}
+        WHERE  DEALR_NM = #{item.SAUPJ_NM} 
+        AND    DEALR_DP = #{item.DEALR_DP}    
+        </foreach>
+    </update>
+
+    <delete id="saveGrid01DeleteData">
+        DELETE FROM AXTB0900
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (TXSAE_NO = #{item.TXSAE_NO})
+        </foreach>
+        </where>
+    </delete>
+
+    <delete id="saveGrid01AttachDeleteData">
+        DELETE FROM AXTB1100
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (SAEOB_NO = #{item.TXSAE_NO})
+        </foreach>
+        </where>
+    </delete>
+</mapper>

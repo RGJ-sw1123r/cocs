@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA110SI_DAO">
+    <select  id="selectList" parameterType="HashMap" resultType="HashMap">
+            SELECT SAEOB_TY,
+                   CASE WHEN SAEOB_TY = 'S' THEN '사업자번호' ELSE '주민등록번호' END AS SAEOB_HTY, 
+                   CARDD_KB,
+                   SAEOB_NO,
+                   BIYON_KB,
+                   DEALR_NM,
+                   DEALR_DP,
+                   DAMDA_ID,
+                   UPTAE_NY,
+                   FAXXX_NO,
+                   UPJON_NY,
+                   EMAIL_ID,
+                   BUPIN_NO,
+                   TELEP_NO,
+                   ADDRE_NY,
+                   ADDRE_N2,
+                   TAXXX_TY,
+                   WITAK_KB,
+                   CHOOL_KB,
+                   BANKK_CD,
+                   DEPOS_NM,
+                   DEPOS_NO,
+                   AFFIL_ID,
+                   SDATE_DT,
+                   LDATE_DT,
+                   SDEPT_CD,
+                   LTIME_TM,
+                   SWRIT_JN,
+                   JOBLG_JN,
+                   DEALR_ST,
+                   DEALR_ED,
+                   BIGOO_NY
+            FROM   AXTB1100
+            <where>
+            <if test="dued==1">
+            AND    BIYON_KB LIKE '%'||  #{biyon} ||'%'
+            AND    DEALR_NM LIKE '%'||  #{name} ||'%'
+            AND    TO_DATE(SDATE_DT, 'YYYY-MM-DD') <![CDATA[> ]]> sysdate 
+            OR     SDATE_DT is null
+            </if>
+            <if test="dued==0">   
+            AND    BIYON_KB LIKE '%'||  #{biyon} ||'%'
+            AND    DEALR_NM LIKE '%'||  #{name} ||'%'
+            </if>
+            </where>
+    </select>
+
+    <select  id="taxList" parameterType="HashMap" resultType="HashMap">
+            SELECT GITAA_CD,
+                   GITAA_NM,
+                   '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NAME
+            FROM   AXTB1000
+            WHERE  ITEMM_KB = 'A08'
+            AND    GITAA_CD <![CDATA[<>]]> '***'    
+    </select>
+
+    <select  id="custList" parameterType="HashMap" resultType="HashMap">
+            SELECT GITAA_CD,
+                   GITAA_NM,
+                   '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NAME
+            FROM   AXTB1000
+            WHERE  ITEMM_KB = 'A03' 
+            AND    GITAA_CD <![CDATA[<>]]> '***'   
+    </select>
+
+    <select  id="modal_01Info" parameterType="HashMap" resultType="HashMap">
+            SELECT A.SAEOB_NO SAEOB_NO, 
+                   A.CDATE_DT CDATE_DT, 
+                   A.CTIME_TM CTIME_TM, 
+                   A.JOBLG_JN JOBLG_JN,
+                   A.DEALR_NM DEALR_NM,
+                   A.DEALR_DP DEALR_DP, 
+                   A.ADDRE_NY ADDRE_NY, 
+                   A.ADDRE_N2 ADDRE_N2, 
+                   A.ODATA_NY ODATA_NY,
+                   C.USERS_NM USERS_NM 
+              FROM AXTB1110 A, AXTB1100 B, SYTB0100 C
+              WHERE A.DEALR_NM LIKE '%'||  #{name} ||'%'
+              AND A.SAEOB_NO = B.SAEOB_NO(+)
+              AND A.JOBLG_JN = C.USERS_ID(+)
+              ORDER BY A.CDATE_DT DESC, A.CTIME_TM DESC
+    </select>
+
+    <insert id="saveGrid01InsertData">
+	INSERT ALL
+        <foreach collection="insertList" item="item">
+        INTO AXTB1100
+         (SAEOB_TY, CARDD_KB, SAEOB_NO, BIYON_KB, DEALR_NM, DEALR_DP,
+          DAMDA_ID, UPTAE_NY, FAXXX_NO, UPJON_NY, EMAIL_ID, BUPIN_NO,
+          TELEP_NO, ADDRE_NY, ADDRE_N2, TAXXX_TY, WITAK_KB, CHOOL_KB,
+          BANKK_CD, DEPOS_NM, DEPOS_NO, AFFIL_ID, SDATE_DT, LDATE_DT,
+          SDEPT_CD, LTIME_TM, SWRIT_JN, JOBLG_JN, DEALR_ST, DEALR_ED,
+          BIGOO_NY)
+        VALUES
+        (
+          #{item.SAEOB_TY}, 
+          #{item.CARDD_KB}, 
+          #{item.SAEOB_NO}, 
+          #{item.BIYON_KB}, 
+          #{item.DEALR_NM}, 
+          #{item.DEALR_DP},
+          #{item.DAMDA_ID}, 
+          #{item.UPTAE_NY}, 
+          #{item.FAXXX_NO}, 
+          #{item.UPJON_NY}, 
+          #{item.EMAIL_ID}, 
+          #{item.BUPIN_NO},
+          #{item.TELEP_NO}, 
+          #{item.ADDRE_NY}, 
+          #{item.ADDRE_N2}, 
+          #{item.TAXXX_TY}, 
+          #{item.WITAK_KB}, 
+          #{item.CHOOL_KB},
+          #{item.BANKK_CD}, 
+          #{item.DEPOS_NM}, 
+          #{item.DEPOS_NO}, 
+          #{item.AFFIL_ID}, 
+          TO_CHAR(sysdate, 'YYYYMMDD'),
+          TO_CHAR(sysdate, 'YYYYMMDD'),
+          #{item.SDEPT_CD}, 
+          TO_CHAR(sysdate, 'HH24MISS'), 
+          #{item.SWRIT_JN}, 
+          #{item.JOBLG_JN}, 
+          #{item.DEALR_ST}, 
+          #{item.DEALR_ED},
+          #{item.BIGOO_NY}      
+        )
+        </foreach>
+	SELECT 1 FROM DUAL
+    </insert>
+
+    <insert id="saveGrid01AttachInsertData">
+	INSERT ALL
+        <foreach collection="insertList" item="item">
+        INTO TOR_CUST
+         (CUST_BSNO, CUST_NAME, CUST_OWNER, CUST_MAN, CUST_TYPE, 
+          CUST_FAX, CUST_ITEM, CUST_EMAIL, CUST_SLNO, CUST_TEL, 
+          CUST_ADDR1, CUST_ADDR2, CUST_BANK, CUST_DEOWN, 
+          CUST_ACCNO, CUST_FINDT, CUST_ECUPDT)
+        VALUES
+        (
+          #{item.SAEOB_NO}, 
+          #{item.DEALR_NM}, 
+          #{item.DEALR_DP},
+          #{item.DAMDA_ID}, 
+          #{item.UPTAE_NY}, 
+          #{item.FAXXX_NO}, 
+          #{item.UPJON_NY}, 
+          #{item.EMAIL_ID}, 
+          #{item.BUPIN_NO},
+          #{item.TELEP_NO}, 
+          #{item.ADDRE_NY}, 
+          #{item.ADDRE_N2}, 
+          #{item.BANKK_CD}, 
+          #{item.DEPOS_NM}, 
+          #{item.DEPOS_NO},  
+          TO_CHAR(sysdate, 'YYYYMMDD'), 
+          TO_CHAR(sysdate, 'YYYYMMDD')  
+        )
+        </foreach>
+	SELECT 1 FROM DUAL
+    </insert>
+
+    <update id="saveGrid01UpdateData"> 
+	<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	UPDATE AXTB1100 SET
+	SAEOB_TY = #{item.SAEOB_TY}, 
+        CARDD_KB = #{item.CARDD_KB}, 
+        BIYON_KB = #{item.BIYON_KB}, 
+        DEALR_NM = #{item.DEALR_NM}, 
+        DEALR_DP = #{item.DEALR_DP},
+        DAMDA_ID = #{item.DAMDA_ID}, 
+        UPTAE_NY = #{item.UPTAE_NY}, 
+        FAXXX_NO = #{item.FAXXX_NO}, 
+        UPJON_NY = #{item.UPJON_NY},
+        EMAIL_ID = #{item.EMAIL_ID}, 
+        BUPIN_NO = #{item.BUPIN_NO},
+        TELEP_NO = #{item.TELEP_NO}, 
+        ADDRE_NY = #{item.ADDRE_NY}, 
+        ADDRE_N2 = #{item.ADDRE_N2}, 
+        TAXXX_TY = #{item.TAXXX_TY}, 
+        WITAK_KB = #{item.WITAK_KB}, 
+        CHOOL_KB = #{item.CHOOL_KB},
+        BANKK_CD = #{item.BANKK_CD}, 
+        DEPOS_NM = #{item.DEPOS_NM}, 
+        DEPOS_NO = #{item.DEPOS_NO}, 
+        AFFIL_ID = #{item.AFFIL_ID}, 
+        LDATE_DT = TO_CHAR(sysdate, 'YYYYMMDD'),
+        SDEPT_CD = #{item.SDEPT_CD}, 
+        LTIME_TM = TO_CHAR(sysdate, 'HH24MISS'), 
+        JOBLG_JN = #{item.JOBLG_JN}, 
+        DEALR_ST = #{item.DEALR_ST}, 
+        DEALR_ED = #{item.DEALR_ED},
+        BIGOO_NY = #{item.BIGOO_NY}
+        WHERE SAEOB_NO = #{item.SAEOB_NO}
+	</foreach>
+    </update>
+
+    <update id="saveGrid01AttachUpdateData"> 
+	<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	UPDATE TOR_CUST SET
+        CUST_NAME = #{item.DEALR_NM}, 
+        CUST_OWNER = #{item.DEALR_DP},
+        CUST_MAN = #{item.DAMDA_ID},  
+        CUST_TYPE = #{item.UPTAE_NY},
+        CUST_FAX = #{item.FAXXX_NO},  
+        CUST_ITEM  = #{item.UPJON_NY}, 
+        CUST_EMAIL = #{item.EMAIL_ID}, 
+        CUST_SLNO = #{item.BUPIN_NO}, 
+        CUST_TEL = #{item.TELEP_NO}, 
+        CUST_ADDR1 = #{item.ADDRE_NY}, 
+        CUST_ADDR2 = #{item.ADDRE_N2}, 
+        CUST_BANK = #{item.BANKK_CD}, 
+        CUST_DEOWN = #{item.DEPOS_NM}, 
+        CUST_ACCNO = #{item.DEPOS_NO}, 
+        CUST_ECUPDT = TO_CHAR(sysdate, 'YYYYMMDD')
+        WHERE CUST_BSNO = #{item.SAEOB_NO}
+	</foreach>
+    </update>
+		
+    <delete id="saveGrid01DeleteData">
+     	DELETE FROM AXTB1100
+        <where>
+	<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (SAEOB_NO = #{item.SAEOB_NO})
+        </foreach>
+        </where>
+     </delete>   
+</mapper>    

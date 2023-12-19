@@ -1,0 +1,190 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        grid_02: {},
+        gridData_01: {},
+        gridData_02: {},
+        saveGridData: function () {
+            var dataVar = 'gridData_02';
+            var datagridVar = 'grid_02';
+            var url = '/api/BGA010/grid_02/gridData';
+
+            var nRow = viewX.grid_01.getRow();
+            var siteCode = viewX.grid_01.getRowData(nRow).SITE_CODE;
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            var addData = {
+                GOGU_SITE: siteCode
+            };
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            var checkData = JSON.parse(sendData);
+
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_02', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(error);                       
+                }
+            }
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var dataVar = 'gridData_02';
+            var datagridVar = 'grid_02';
+            var url = '/api/BGA010/selectChildGrid';
+            
+            var nRow = viewX.grid_01.getRow();
+            var siteCode = viewX.grid_01.getRowData(nRow).SITE_CODE;
+            var params = { GOGU_SITE: siteCode };
+
+			viewX[datagridVar].lockGrid(true);
+            exios.get(url, params).then((response) => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+                    viewX[datagridVar].lockGrid(false);
+                    return function () {
+                        if (showAlert !== false) {
+                            korbiztech.alert('MGS_GRID_GET_SUCCESS');
+                        }
+                    };
+                } catch (error) {
+                    korbiztech.alert('MGS_GRID_GET_FAIL');
+                    console.error(error);        
+                }
+            });
+        },
+        selectParentGrid: function () {
+            exios.get('/api/BGA010/selectParentGrid').then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        parentGridClick: function () {
+            viewX.grid_02.clearStatus();
+            var nRow = viewX.grid_01.getRow();
+            if (nRow > 0) {
+                viewX.selectChildGrid(nRow);
+            }
+        },
+        parentGridKeyDown: function (obj) {
+            if (obj.keyCode == 38 || obj.keyCode == 40) {
+                viewX.parentGridClick();
+            }
+        },
+        selectChildGrid: function (nRow) {
+            var siteCode = viewX.grid_01.getRowData(nRow).SITE_CODE;
+            var params = {GOGU_SITE: siteCode};
+
+            viewX.loadGridData('viewX.grid_02', false);
+        },
+        input_siteNameEnter: function (input_siteName) {
+            viewX.grid_02.setGridData({}, false);
+            viewX.grid_02.refresh({'focus': false});
+            if (input_siteName) {
+                var params = {SITE_NAME: input_siteName.trim()};
+
+                exios.get('/api/BGA010/selectParentGrid', params).then((response) => {
+                    viewX.gridData_01 = response.data;
+                    viewX.grid_01.setGridData(viewX.gridData_01, false);
+                    viewX.grid_01.refresh({'focus': false});
+                });
+            } else {
+                viewX.selectParentGrid();
+            }
+            SBUxMethod.focus('input_siteName');
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                extendlastcol: 'scroll',
+                selectmode: 'byrow',
+                custompanel: [''],
+                columns: [
+                    { caption: ['현장코드'], ref: 'SITE_CODE', width: '160px', style: 'text-align:center', type: 'output' },
+                    { caption: ['현장명'], ref: 'SITE_NAME', width: '340px', style: 'text-align:left', type: 'output' },
+                ]
+            },
+            grid_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                extendlastcol: 'scroll',
+                primarykey: ['GOGU_CODE'],
+                custompanel: ['toggleEditMode', 'refresh', 'add', 'delete', 'save'],
+                total: {
+                    type: 'grand',
+                    position: 'top',
+                    columns: {
+                        standard: [0],
+                        sum: [5],
+                    },
+                    grandtotalrow: {
+                        titlecol: 4,
+                        titlevalue: '합계',
+                        style: 'background-color: rgb(146, 178, 197); font-weight: bold; color: rgb(255, 255, 255);',
+                    },
+                },
+                columns: [
+                    { caption: [], ref: 'check', width: '24px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['공구코드'], ref: 'GOGU_CODE', width: '100px', maxlength: 3, style: 'text-align:center', type: 'input' },
+                    { caption: ['공구명'], ref: 'GOGU_NAME', width: '240px', style: 'text-align:left', type: 'input' },
+                    { caption: ['과세율'], ref: 'GOGU_RATE', width: '140px', style: 'text-align:right', format: { type: 'number', rule: '0.00', emptyvalue: '0.00' }, type: 'input' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.grid_01.bind('click', 'viewX.parentGridClick');
+        viewX.grid_01.bind('keydown', 'viewX.parentGridKeyDown');
+        viewX.selectParentGrid();
+    })
+</script>
+<style>
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>공구코드등록</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        <span id="text">현장명</span> 
+        <sbux-input id="input_siteName" name="input_siteName" uitype="text" style="width: 300px;" onkeyenter="viewX.input_siteNameEnter(input_siteName)"></sbux-input>
+    </div>
+    <div class="grid-container d_flex">
+        <div id="SBGridArea_01" class="flex-5"></div>
+        <div id="SBGridArea_02" class="flex-5 ml10"></div>
+    </div>
+</body>

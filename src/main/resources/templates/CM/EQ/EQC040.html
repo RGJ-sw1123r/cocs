@@ -1,0 +1,146 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        saveGridData: function () {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/EQC040/grid_01/gridData';
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_01', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.log(error);
+                }
+            }
+
+            var checkData = JSON.parse(sendData);
+            if (checkData.length > 0) {
+                var primarykey = viewX[datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/EQC040/selectGrid';
+
+            exios.get(url).then((response => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+                    return function () {
+                        if (showAlert !== false) {
+                            korbiztech.alert('MSG_GRID_GET_SUCCESS');
+                        };
+                    };
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_GET_FAIL');
+                    console.error(error);
+                }
+            }));
+
+        },
+        selectGrid: function () {
+            exios.get('/api/EQC040/selectGrid').then((response => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({'focus': false});
+            }));
+        },
+        input_nameEnter: function (input_name) {
+            if (input_name) {
+                var params = {ECODE_NAME: input_name.trim()};
+                exios.get('/api/EQC040/selectGrid', params).then((response => {
+                    viewX.gridData_01 = response.data;
+                    viewX.grid_01.setGridData(viewX.gridData_01, false);
+                    viewX.grid_01.refresh({'focus': false});
+                }));
+            } else {
+                viewX.selectGrid();
+            }
+            SBUxMethod.focus('input_name');
+        }
+    };
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq', 'update'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'free',
+                useinitsorting: true,
+                primarykey: ['ECODE_CODE'],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                columns: [
+                    { caption: [''], ref: 'CHECK', width: '30px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['장비코드'], ref: 'ECODE_CODE', width: '120px', style: 'text-align:center', type: 'input', typeinfo: { maxlength: 8 }, sortable: true },
+                    { caption: ['장비명'], ref: 'ECODE_NAME', width: '320px', style: 'text-align:center', type: 'input', sortable: true },
+                    { caption: ['규격'], ref: 'ECODE_SIZE', width: '200px', style: 'text-align:center', type: 'input' },
+                    { caption: ['단위'], ref: 'ECODE_UNIT', width: '100px', style: 'text-align:center', type: 'input' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectGrid();
+    })
+</script>
+<style>
+    .search-container {
+        margin: 10px;
+    }
+
+    .grid-container {
+        margin: 10px;
+    }
+</style>
+
+<div class="softbowl-tem-contents">
+    <div class="menuPath-wrap">
+        <h3>장비코드등록</h3> <!-- DNS: 제목 추가 -->
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="search-container sortbox"><!-- .sortbox 추가 -->
+        <!-- DNS: div.sortbox_inner ul.sortitem li 형태로 변경 -->
+        <div class="sortbox_inner">
+            <ul class="sortitem">
+                <li>
+                    <span id="text">장비명</span>
+                    <sbux-input id="input_name" name="input_name" uitype="text" style="width: 300px;" 
+                    onkeyenter="viewX.input_nameEnter(input_name)"></sbux-input>
+                </li>
+            </ul>
+            <!--  DNS: .sort_btn  버튼섹션 추가. 작동되도록 개발해주세요 ^^; -->
+            <div class="sort_btn">
+                <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run" onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+            </div>
+            <!--  //DNS: 버튼섹션 추가 -->
+        </div>
+        <!-- //DNS: div.sortbox_inner ul.sortitem-li 형태로 변경 -->
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01" class="cocs-table-list"></div><!-- DNS: 컨트롤패널 + 테이블 .cocs-table-list 추가 -->
+    </div>
+</div>

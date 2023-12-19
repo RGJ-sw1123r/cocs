@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA100SI_DAO">
+    <select  id="selectList" parameterType="HashMap" resultType="HashMap">
+            SELECT itemm_kb,
+                   gitaa_cd,
+                   gitaa_NM,
+                   GITAA_KB
+            FROM   AXTB1000
+            WHERE  gitaa_cd = '***'
+            AND    NVL(gitaa_nm,'') LIKE '%'||  #{gubun} ||'%'
+    </select>
+
+    <select  id="selectDetailList" parameterType="HashMap" resultType="HashMap">
+            SELECT gitaa_cd,
+                   gitaa_NM,
+                   gitaa_c1,
+                   gitaa_c2
+            FROM   AXTB1000   
+            WHERE  gitaa_cd <![CDATA[<> ]]>'***'
+            AND    itemm_kb = #{code}
+            ORDER BY gitaa_cd
+    </select>
+
+    <insert id="saveGrid01InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB1000
+        (itemm_kb, gitaa_cd, gitaa_NM, GITAA_KB, gitaa_c1, gitaa_c2)
+        VALUES
+        (
+                #{item.ITEMM_KB},
+                #{item.GITAA_CD},
+                #{item.GITAA_NM},
+                #{item.GITAA_KB},
+                #{item.GITAA_C1},
+                #{item.GITAA_C2}
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+     </insert>
+
+     <update id="saveGrid01UpdateData">
+     	<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	UPDATE AXTB1000 SET
+        gitaa_NM = #{item.GITAA_NM}, 
+        GITAA_KB = #{item.GITAA_KB}, 
+        gitaa_c1 = #{item.GITAA_C1}, 
+        gitaa_c2 = #{item.GITAA_C2}
+        WHERE  itemm_kb = #{item.ITEMM_KB}
+        AND    gitaa_cd = #{item.GITAA_CD}
+        </foreach>
+     </update>
+
+     <delete id="saveGrid01DeleteData">
+     	DELETE FROM AXTB1000
+        <where>
+	<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (itemm_kb = #{item.ITEMM_KB})
+        </foreach>
+        </where>
+     </delete>
+
+     <delete id="saveGrid02DeleteData">
+     	DELETE FROM AXTB1000
+        <where>
+	<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (itemm_kb = #{item.ITEMM_KB}
+        AND gitaa_cd = #{item.GITAA_CD})
+        </foreach>
+        </where>
+     </delete>
+</mapper>

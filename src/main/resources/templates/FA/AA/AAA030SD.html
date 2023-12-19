@@ -1,0 +1,417 @@
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        selectedRow: '',
+        radioJson: [
+            { id: "1", text: "회계승인", value: "0" },
+            { id: "2", text: "자동승인", value: "1" },
+        ],
+        ynJson: [
+            { id: "1", text: "예", value: "Y" },
+            { id: "2", text: "아니오", value: "N" },
+        ],
+        tabJson: [
+            { id: '0', pid: '-1', order: '1', text: '기본조회조건', targetid: 'tab_01' },
+            { id: '1', pid: '-1', order: '2', text: '상세조회조건', targetid: 'tab_02' },
+        ],
+        taxJson: [],
+        deptJson: [],
+        costJson: [],
+        gongJson: [],
+        govJson: [],
+
+        gongsaJson: [],
+        bonsaJson: [],
+        taxpayJson: [],
+
+        code: '',
+        dued: '',
+
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+        saveGridData: (gridName) => {
+            console.log(gridName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(gridName);
+            var url = '/api/AAXA030SI/' + gridName + '/gridData';
+            console.log(variables.datagridVar)
+            console.log(variables.dataVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            var addData = {
+                AUNTT_KB: '01',   // 추후 로그인 session 추가 후 수정할 것
+                BUSEO_CD: viewX.gridData_01[viewX.selectedRow].BUSEO_CD
+            };
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                } catch (e) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(e);
+                }
+            };
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+
+        selectList: () => {
+            dued = $("#DUED_DENY").val();
+            code = $("#code").val();
+            var searchCondition = {
+                code: code,
+                dued: dued,
+                AUNTT_KB: '01'
+            };
+            console.log(searchCondition);
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/AAXA030SI/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(() => {
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            viewX.jsonList();
+        },
+
+        loadGridData: (gridId, showAlert) => {
+            console.log(gridId);
+            viewX.selectList();
+        },
+
+        getSelectedRows: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            exios.get('/api/AAXA030SI/deptList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_04 = response.data;
+            }).then(() => {
+                viewX.grid_04.setGridData(viewX.gridData_04, false);
+                viewX.grid_04.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/empList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_05 = response.data;
+            }).then(() => {
+                viewX.grid_05.setGridData(viewX.gridData_05, false);
+                viewX.grid_05.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/siteList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_02 = response.data;
+            }).then(() => {
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/subcontList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_03 = response.data;
+            }).then(() => {
+                viewX.grid_03.setGridData(viewX.gridData_03, false);
+                viewX.grid_03.refresh({ 'focus': false });
+            });
+        },
+        tabEvent: (tabName) => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            switch (tabName) {
+                case 'tab_01':
+                    exios.get('/api/AAXA030SI/deptList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_04 = response.data;
+                    }).then(() => {
+                        viewX.grid_04.setGridData(viewX.gridData_04, false);
+                        viewX.grid_04.clearStatus();
+                        viewX.grid_04.refresh({ 'focus': false });
+                    });
+                    exios.get('/api/AAXA030SI/empList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_05 = response.data;
+                    }).then(() => {
+                        viewX.grid_05.setGridData(viewX.gridData_05, false);
+                        viewX.grid_05.clearStatus();
+                        viewX.grid_05.refresh({ 'focus': false });
+                    });
+                    break;
+                case 'tab_02':
+                    exios.get('/api/AAXA030SI/siteList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_02 = response.data;
+                    }).then(() => {
+                        viewX.grid_02.setGridData(viewX.gridData_02, false);
+                        viewX.grid_02.clearStatus();
+                        viewX.grid_02.refresh({ 'focus': false });
+                    });
+                    break;
+            }
+        },
+
+        jsonList: () => {
+            exios.get('/api/AAXA080SI/selectList').then((response) => {
+                viewX.taxJson = response.data;
+            });
+            exios.get('/api/AAXA120SI/deptList').then((response) => {
+                viewX.deptJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/costList').then((response) => {
+                viewX.costJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/gongList').then((response) => {
+                viewX.gongJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/govList').then((response) => {
+                viewX.govJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/gongsaList').then((response) => {
+                viewX.gongsaJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('GONSA_KB');
+            });
+            exios.get('/api/AAXA030SI/bonsaList').then((response) => {
+                viewX.bonsaJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('COSTT_KB'); // 본사코드 관련 칼럼 찾기
+            });
+            exios.get('/api/AAXA030SI/taxpayList').then((response) => {
+                viewX.taxpayJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('VATTT_KB');
+            });
+        },
+        setGubun: (gubun) => {
+            if (!gubun) gubun = '';
+            viewX.gubun = gubun;
+        },
+        selectCode: (event) => {
+            console.log(event.target.id);
+            console.log(event.target.value);
+            var taxleng = viewX.taxJson.length;
+            var deptleng = viewX.deptJson.length;
+            var costleng = viewX.costJson.length;
+            var gongleng = viewX.gongJson.length;
+            var govleng = viewX.govJson.length;
+            switch (event.target.id) {
+                case 'TXSAE_NO':
+                    for (let i = 0; i < taxleng; i++) {
+                        if (event.target.value === viewX.taxJson[i].TXSAE_NO) {
+                            console.log('11111111');
+                            $("#TXSAE_NM").val(viewX.cardJson[i].SAUPJ_NM);
+                            break;
+                        } else {
+                            $("#TXSAE_NM").val('미등록 부가세신고단위');
+                        }
+                    }
+                    break;
+                case 'COSTT_CD':
+                    for (let i = 0; i < costleng; i++) {
+                        if (event.target.value === viewX.costJson[i].ACCNT_CD) {
+                            $("#COSTT_NM").val(viewX.costJson[i].ACCNT_YA);
+                            break;
+                        } else {
+                            $("#COSTT_NM").val('미등록 COST');
+                        }
+                    }
+                    break;
+                case 'GONGG_CD':
+                    for (let i = 0; i < gongleng; i++) {
+                        if (event.target.value === viewX.gongJson[i].SILD_ITEM) {
+                            $("#GONGG_NM").val(viewX.gongJson[i].SILD_NAME);
+                            break;
+                        } else {
+                            $("#GONGG_NM").val('미등록 공종코드');
+                        }
+                    }
+                    break;
+                case 'KWANH_CD':
+                    for (let i = 0; i < govleng; i++) {
+                        if (event.target.value === viewX.govJson[i].GITAA_CD) {
+                            $("#KWANH_NM").val(viewX.govJson[i].GITAA_NM);
+                            break;
+                        } else {
+                            $("#KWANH_NM").val('미등록 관청');
+                        }
+                    }
+                    break;
+                default:
+                    var targetName = event.target.id.replace('_CD', '_NM');
+                    for (let i = 0; i < deptleng; i++) {
+                        if (event.target.value === viewX.deptJson[i].BUSEO_CD) {
+                            $("#" + targetName).val(viewX.bankJson[i].BUSEO_NM);
+                            break;
+                        } else {
+                            $("#" + targetName).val('미등록 부서');
+                        }
+                    }
+                    break;
+            }
+        },
+    };
+
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['결재번호'], ref: 'BUSEO_CD', width: '30%', style: 'text-align:center', type: 'output' },
+                    { caption: ['결재자'], ref: 'BUSEO_NM', width: '30%', style: 'text-align:center', type: 'input' },
+                    { caption: ['계정과목'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['원가부서명'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['거래처명'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['적요'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['차변'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['대변'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['품의번호'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['품의부서'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['작성자'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['CARDD_NO'],
+                custompanel: ['refresh',],
+            },
+
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_01.bind('click', 'viewX.getSelectedRows');
+        //viewX.selectList();
+    });
+</script>
+<style>
+    div {
+        padding: 0;
+        margin: 0;
+    }
+
+    /*header*/
+    .softbowl-tem-header {
+        display: table;
+        width: 100%;
+        height: 5%;
+        padding: 10px;
+        background: #386ec7;
+        box-sizing: border-box;
+    }
+
+    .softbowl-tem-header h3 {
+        display: table-cell;
+        color: #fff;
+    }
+
+    .softbowl-form {
+        margin-left: 10px;
+    }
+
+    .softbowl-grid {
+        margin-left: 20px;
+    }
+
+    #selectList {
+        width: 60px;
+        height: 30px;
+        text-align: center;
+        margin-left: 20px;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    #selectList:hover {
+        background-color: #C5DCF0;
+    }
+
+    #text {
+        font-size: 15px;
+        font-weight: bold;
+        margin-left: 20px;
+        margin-right: 30px;
+    }
+
+    #inner-text {
+        font-size: 15px;
+        font-weight: bold;
+        margin-left: 30px;
+        margin-right: 30px;
+        margin-bottom: 30px;
+    }
+
+    #searchEcodeName {
+        display: flex;
+        align-items: center;
+        /* 수직 정렬 */
+    }
+</style>
+
+<body>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        <div style="display:flex;">
+            <!-- <div id="SBGridArea" style="width:40%;height:800px;margin:5px;float:center;"></div> -->
+            <div class="sbt-input-tab">
+                <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" is-scrollable="false"
+                    jsondata-ref="viewX.tabJson" title-target-id-array="tab_01^tab_02^tab_03"
+                    title-text-array="tab_01^tab_02^tab_03" is-close-icon="false"
+                    onclick="viewX.tabEvent(tab_norm)"></sbux-tabs>
+                <div class="tab-content">
+                    <!-- 기본 -->
+                    <div id="tab_01">
+                        <div class="sbt-tab-wrap">
+                            <div class="sbt-grid">
+                                <div style="display:flex;align-items:center;">
+                                    <span id="inner-text">기준일자 :</span>
+                                    <sbux-datepicker id="DEALR_ST" name="DEALR_ST" uitype="popup"
+                                        grid-id="viewX.grid_01" style="width:160px;"></sbux-datepicker>
+                                        <span id="inner-text">~</span>
+                                    <sbux-datepicker id="DEALR_ST" name="DEALR_ST" uitype="popup"
+                                        grid-id="viewX.grid_01" style="width:160px;"></sbux-datepicker>
+                                </div>
+                                <div style="display:flex;align-items:center;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 상세 -->
+                    <div id="tab_02">
+                        <div class="sbt-tab-wrap">
+                            <div class="sbt-grid">
+                                <div style="display:flex;align-items:center;">
+                                    <div id="SBGridArea_02" style="height:220px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>

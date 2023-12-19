@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGA010_DAO">
+
+    <select id="selectParentGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT SITE_CODE, SITE_NAME
+        FROM TCT_SITE
+        WHERE SITE_OFFICE = '01'
+        <if test="SITE_NAME != null">
+            AND SITE_NAME LIKE '%' || #{SITE_NAME} || '%'
+        </if>
+    </select>
+
+    <select id="selectChildGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT GOGU_SITE, GOGU_CODE, GOGU_NAME, GOGU_RATE
+        FROM TBG_GOGU
+        WHERE GOGU_OFFICE = '01'
+        AND GOGU_SITE = #{GOGU_SITE}
+        ORDER BY GOGU_CODE
+    </select>
+
+    <update id="saveChildGrid">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE TBG_GOGU
+        SET
+            GOGU_NAME = #{item.GOGU_NAME},
+            GOGU_RATE = #{item.GOGU_RATE}
+        WHERE
+            GOGU_OFFICE = '01'
+            AND GOGU_SITE = #{item.GOGU_SITE}
+            AND GOGU_CODE = #{item.GOGU_CODE}
+        </foreach>
+    </update>
+
+    <insert id="insertChildGrid">
+        INSERT ALL
+            <foreach collection="insertList" item="item">
+                INTO TBG_GOGU
+                (
+                    GOGU_OFFICE,
+                    GOGU_SITE,
+                    GOGU_CODE,
+                    GOGU_NAME,
+                    GOGU_RATE
+                )
+                VALUES
+                (
+                    '01',
+                    #{item.GOGU_SITE},
+                    #{item.GOGU_CODE},
+                    #{item.GOGU_NAME},
+                    #{item.GOGU_RATE}
+                )
+            </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <delete id="deleteChildGrid">
+        DELETE
+        FROM TBG_GOGU
+        <where>
+            <foreach collection="deleteList" item="item" open="" close="" separator="OR">
+                (
+                    GOGU_OFFICE = '01'
+                    AND GOGU_SITE = #{item.GOGU_SITE}
+                    AND GOGU_CODE = #{item.GOGU_CODE}
+                )
+            </foreach>
+        </where>
+    </delete>
+</mapper>

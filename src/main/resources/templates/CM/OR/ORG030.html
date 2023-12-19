@@ -1,0 +1,97 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        saveGridData: function () {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/ORG030/grid_01/gridData';
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            var checkData = JSON.parse(sendData);
+
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_02', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(error);                       
+                }
+            }
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/ORG030/selectGrid';
+
+            exios.get(url).then((response) => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+                    return function () {
+                        if (showAlert !== false) {
+                            korbiztech.alert('MGS_GRID_GET_SUCCESS');
+                        }
+                    };
+                } catch (error) {
+                    korbiztech.alert('MGS_GRID_GET_FAIL');
+                    console.error(error);        
+                }
+            });
+        },
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                explorerbar: 'sort',
+                selectmode: 'byrow',
+                primarykey: ['OWNR_CODE'],
+                custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                columns: [
+                    { caption: ['코드'], ref: 'OWNR_CODE', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['건설사명'], ref: 'OWNR_NAME', width: '300px', style: 'text-align:left', type: 'input' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.loadGridData();
+    })
+</script>
+<style>
+</style>
+<html>
+<div class="menuPath-wrap">
+    <h3>건설사코드</h3>
+    <div class="menuPath-title"></div>
+</div>
+<div class="grid-container">
+    <div id="SBGridArea_01"></div>
+</div>
+</html>

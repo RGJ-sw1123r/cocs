@@ -1,0 +1,314 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {},
+        gridData_01: {}, gridData_02: {},
+        siteJson: [],
+        selectSite: function () {
+            exios.get('/api/EQA010/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+            });
+        },
+        selectParentGrid: function () {
+            // exios.get
+        },
+        selectChildGrid: function () {
+            // exios.get
+        },
+    }
+    
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                custompanel: [],
+                height: '340px',
+                columns: [
+                    {caption: [''], ref: 'check', width: '40px', style: 'text-align:center', type: 'checkbox' },
+                    {caption: ['장비코드'], ref: 'ecode_code', width: '120px', style: 'text-align:center', type: 'input', typeinfo : {maxlength : 8} },
+                    {caption: ['명칭'], ref: 'ecode_name', width: '200px', style: 'text-align:center', type: 'input' },
+                    {caption: ['규격'], ref: 'ecode_size', width: '220px', style: 'text-align:center', type: 'input', sortable: false },
+                    {caption: ['단위'], ref: 'ecode_unit', width: '100px', style: 'text-align:center', type: 'input', sortable: false }
+                ]
+            },
+            grid_02 : {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                custompanel: [],
+                height: '340px',
+                columns: [
+                    {caption: [''], ref: 'check', width: '30px', style: 'text-align:center', type: 'checkbox' },
+                    {caption: ['장비순번'],	ref: 'mstr_carno', width: '120px', style: 'text-align:center', type: 'input' },
+                    {caption: ['임차일자'], ref: 'mstr_rdate', width: '320px', style: 'text-align:center', type: 'input',  typeinfo : {mask : {alias : 'XXXX-XX-XX', unmaskvalue : false}} },
+                    {caption: ['업체명'], ref: 'dealr_nm', width: '200px', style: 'text-align:center', type: 'input' }
+                ]
+            },
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_02);
+        viewX.selectSite();
+    })
+</script>
+<style>
+    html,body,body>div {width: 100%;height: 100%;margin: 0;padding: 0; }
+    div {padding: 0;margin: 0;}
+
+    /*content*/
+	.softbowl-tem-contents {width: 100%; height:90%; margin: 0 auto; padding: 20px; box-sizing: border-box;}
+    .softbowl-tem-title {height:5%; padding-bottom: 10px; font-size: 20px; font-weight: bold; color: #444;}
+    .softbowl-form {width: 100%; height:95%; border: #d0d0d0 solid 1px; background-color: #f3f3f3; margin-bottom: 20px;}
+    .softbowl-form table {width: 100%; padding: 10px 20px 10px 10px; text-align: right;font-size: 14px;}
+
+    .grid_float {display: table; width: 100%; height: 100%; margin-top: 10px;}
+    .grid_content {float: left; display: table-column; width: 50%;height: 100%; padding:0 10px; vertical-align: top; box-sizing: border-box;}
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        
+        <table>
+            <tr>
+                <td>현장명</td>
+                <td>
+                    <sbux-select id="select_site" name="select_site" uitype="single"
+                        jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+                        onchange="siteChange()">
+                    </sbux-select>
+                </td>
+                </td>
+                <td>장비명</td>
+                <td>
+                    <sbux-input id="ecode_name" name="장비명" uitype="text"></sbux-input>
+                </td>
+            </tr>
+        </table>
+        <div class="grid_float">
+            <div class="grid_content">
+                <div id="SBGridArea_01"></div>
+                <div id="SBGridArea_02"></div>
+            </div>
+                <div class="grid_content">
+                    <div class="softbowl-form">
+                    <table>
+                        <colgroup>
+                            <col width="20%">
+                            <col width="25%">
+                            <col width="25%">
+                            <col width="25%">
+                            <col width="5%">
+                        </colgroup>
+                        <tr>
+                            <td>장비코드</td>
+                            <td>
+                                <sbux-input id="ecode_code" name="장비코드" uitype="text" disabled></sbux-input>
+                            </td>
+                            <td>명칭</td>
+                            <td>
+                                <sbux-input id="ecode_name" name="명칭" uitype="text" disabled></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>규격</td>
+                            <td>
+                                <sbux-input id="" name="규격" uitype="text" disabled></sbux-input>
+                            </td>
+                            <td>단위</td>
+                            <td>
+                                <sbux-input id="ecode_name" name="단위" uitype="text" disabled></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>장비구분</td>
+                            <td align="left">
+                                <sbux-select id="mstr_egubun" name="장비구분" uitype="single" disabled>
+                                    <option-item value=""></option-item>
+                                    <option-item value="1">사유장비</option-item>
+                                    <option-item value="2">임차장비</option-item>
+                                </sbux-select>    
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>장비순번</td>
+                            <td>
+                                <sbux-input id="mstr_carno" name="장비순번" uitype="text"></sbux-input>
+                            </td>
+                            <td>임차일자</td>
+                            <td>
+                                <sbux-input id="mstr_rdate" name="임차일자" uitype="text" 
+                                    placeholder="____-__-__"
+                                    mask = "{alias:'yyyy-mm-dd' , autoUnmask:true , outputFormat:'yyyymmdd'}">
+                                </sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>보험기간</td>
+                            <td>
+                                <sbux-input id="mstr_estd1" name="보험기간" uitype="text" 
+                                    placeholder="____-__-__"
+                                    mask = "{alias:'yyyy-mm-dd' , autoUnmask:true , outputFormat:'yyyymmdd'}">
+                                </sbux-input>
+                            </td>
+                            <td>
+                                <sbux-input id="mstr_estd2" name="보험기간" uitype="text" 
+                                    placeholder="____-__-__"
+                                    mask = "{alias:'yyyy-mm-dd' , autoUnmask:true , outputFormat:'yyyymmdd'}">
+                                </sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>시간당사용료</td>
+                            <td>
+                                <sbux-input id="mstr_tamt" name="시간당사용료" uitype="text"></sbux-input>
+                            </td>
+                            <td>월사용료</td>
+                            <td>
+                                <sbux-input id="mstr_mamt" name="월사용료" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>0.5공수</td>
+                            <td>
+                                <sbux-input id="mstr_damt05" name="0.5공수" uitype="text"></sbux-input>
+                            </td>
+                            <td>1공수</td>
+                            <td>
+                                <sbux-input id="mstr_damt" name="1공수" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>기사성명</td>
+                            <td>
+                                <sbux-input id="mstr_man" name="기사성명" uitype="text"></sbux-input>
+                            </td>
+                            <td>전화번호</td>
+                            <td>
+                                <sbux-input id="mstr_tel" name="전화번호" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>주민등록번호</td>
+                            <td>
+                                <sbux-input id="mstr_jumin" name="주민등록번호" uitype="text"></sbux-input>
+                            </td>
+                            <td>핸드폰</td>
+                            <td>
+                                <sbux-input id="mstr_hp" name="핸드폰" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>면허번호</td>
+                            <td>
+                                <sbux-input id="mstr_permno" name="면허번호" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>면허유효기간</td>
+                            <td>
+                                <sbux-input id="mstr_sdate" name="면허유효기간" uitype="text" 
+                                    placeholder="____-__-__"
+                                    mask = "{alias:'yyyy-mm-dd' , autoUnmask:true , outputFormat:'yyyymmdd'}">
+                                </sbux-input>
+                            </td>
+                            <td>
+                                <sbux-input id="mstr_edate" name="면허유효기간" uitype="text" 
+                                    placeholder="____-__-__"
+                                    mask = "{alias:'yyyy-mm-dd' , autoUnmask:true , outputFormat:'yyyymmdd'}">
+                                </sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>사업자번호</td>
+                            <td>
+                                <sbux-input id="mstr_bizno" name="사업자번호" uitype="text" 
+                                    placeholder="___-__-_____"
+                                    mask = "{alias:'###-##-#####' , autoUnmask:true , outputFormat:'##########'}">
+                                </sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>업체명</td>
+                            <td>
+                                <sbux-input id="dealr_nm" name="업체명" uitype="text"></sbux-input>
+                            </td>
+                            <td>대표자</td>
+                            <td>
+                                <sbux-input id="dealr_dp" name="대표자" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>업태</td>
+                            <td>
+                                <sbux-input id="uptae_ny" name="업태" uitype="text"></sbux-input>
+                            </td>
+                            <td>전화번호</td>
+                            <td>
+                                <sbux-input id="telep_no" name="전화번호" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>종목</td>
+                            <td>
+                                <sbux-input id="upjon_ny" name="종목" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>사업장주소</td>
+                            <td>
+                                <sbux-input id="woopy_no" name="사업장주소" uitype="text" 
+                                    placeholder="___-___"
+                                    mask = "{alias:'###-###' , autoUnmask:true , outputFormat:'######'}">
+                                </sbux-input>
+                            </td>
+                            <td>
+                                <!-- 주소 검색 버튼 팝업 동작 -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td colspan="2">
+                                <!-- 주소 -->
+                                <sbux-input id="addre_ny" name="" uitype="text" readonly="true"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>   
+                            <td></td>                         
+                            <td colspan="2">
+                                <!-- 상세 주소 -->
+                                <sbux-input id="addre_n2" name="" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>거래은행</td>
+                            <td align="left">
+                                <sbux-select id="mstr_bank" name="거래은행" uitype="single">
+                                    <option-item value=""></option-item>
+                                    <!-- BANK_Luxe_dset -->
+                                </sbux-select>
+                            </td>
+                            <td>예금주</td>
+                            <td>
+                                <sbux-input id="mstr_accman" name="예금주" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>계좌번호</td>
+                            <td>
+                                <sbux-input id="mstr_accno" name="계좌번호" uitype="text"></sbux-input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</html>
+            

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA120SI_DAO">
+    <select id="selectList" parameterType="HashMap" resultType="HashMap">
+            select 
+AA.cardd_no cardd_no,
+AA.carde_no carde_no,
+CE.gitaa_nm carde_nm,
+AA.cardd_kb cardd_kb,
+AA.owner_jn owner_jn,
+AA.ownbu_cd ownbu_cd,
+B.BUSEO_ya ownbu_NM,
+AA.payee_cd payee_cd,
+PY.dealr_NM payee_nm,
+AA.owner_nm owner_nm,
+AA.dbank_cd dbank_cd,
+BA.gitaa_nm dbank_NM,
+AA.ddepo_no ddepo_no,
+AA.kyulj_dt kyulj_dt,
+AA.kyulj_kd kyulj_kd,
+KY.gitaa_NM kyulj_nm,
+AA.enddd_dt enddd_dt,
+AA.limit_ak limit_ak,
+AA.limit_af limit_af,
+AA.blent_dt blent_dt,
+AA.useee_kb useee_kb,
+AA.WRITE_DT WRITE_DT,
+AA.BIGOO_NY BIGOO_NY,
+ (select gitaa_nm from axtb1000 where ITEMM_KB = 'A33' and GITAA_CD = AA.REMAR_KB) remar_kb
+From
+AXTB1200 AA
+left join AXTB1000 CE on CE.itemm_kb = 'A29' and  AA.carde_no = CE.gitaa_cd 
+left join AXTB1000 BA on BA.itemm_kb = 'C38' AND AA.dbank_cd = BA.gitaa_cd 
+left join AXTB1000 KY on KY.itemm_kb = 'A27' and  AA.kyulj_kd = KY.gitaa_cd 
+left join AXTB1100 PY on AA.payee_cd = PY.saeob_no 
+left join AXTB0300 B on B.buseo_cd = AA.ownbu_cd
+<where>
+    <if test="dued==0">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+    </if>
+    <if test="dued==1">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND TO_DATE(AA.ENDDD_DT, 'YYYY-MM') <![CDATA[> ]]> SYSDATE
+    </if>
+    <if test="codeType==1 and dued==0">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE #{cardCode} ||'%'
+    </if>
+    <if test="codeType==2 and dued==0">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE '%'|| #{cardCode} ||'%'
+    </if>
+    <if test="codeType==3 and dued==0">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE '%'|| #{cardCode}
+    </if>
+    <if test="codeType==1 and dued==1">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE #{cardCode} ||'%'
+        AND TO_DATE(AA.ENDDD_DT, 'YYYY-MM') <![CDATA[> ]]> SYSDATE
+    </if>
+    <if test="codeType==2 and dued==1">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE '%'|| #{cardCode} ||'%'
+        AND TO_DATE(AA.ENDDD_DT, 'YYYY-MM') <![CDATA[> ]]> SYSDATE
+    </if>
+    <if test="codeType==3 and dued==1">
+        AND AA.CARDD_KB LIKE '%'|| #{gubun} ||'%'
+        AND AA.CARDD_NO LIKE '%'|| #{cardCode}
+        AND TO_DATE(AA.ENDDD_DT, 'YYYY-MM') <![CDATA[> ]]> SYSDATE
+    </if>
+</where>
+    </select>
+
+    <select id="cardList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM
+        FROM   AXTB1000
+        WHERE  ITEMM_KB = 'A29'
+        AND    GITAA_CD <![CDATA[<> ]]> '***'     
+    </select>
+
+    <select id="ownerList" parameterType="HashMap" resultType="HashMap">
+        SELECT USERS_ID,
+               USERS_NM
+        FROM   SYTB0100       
+    </select>
+
+    <select id="deptList" parameterType="HashMap" resultType="HashMap">
+        SELECT BUSEO_CD, 
+               BUSEO_NM 
+        FROM   axtb0300
+    </select>
+
+    <select id="custList" parameterType="HashMap" resultType="HashMap">
+        SELECT SAEOB_NO,
+               DEALR_NM
+        FROM   AXTB1100       
+    </select>
+
+    <select id="howtopayList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM
+        FROM   AXTB1000
+        WHERE  ITEMM_KB = 'A27'
+        AND    GITAA_CD <![CDATA[<> ]]> '***' 
+    </select>
+
+    <insert id="saveGrid01InsertData">
+	INSERT ALL
+        <foreach collection="insertList" item="item">
+        INTO AXTB1200
+        (AUNTT_KB, CARDD_NO, CARDE_NO, CARDD_KB, OWNER_JN,OWNBU_CD,OWNER_NM,
+        KYULJ_DT, ENDDD_DT, DBANK_CD, KYULJ_KD, DDEPO_NO, REMAR_KB, BLENT_DT,
+        LIMIT_AF, LIMIT_AK, USEEE_KB, PAYEE_CD, WRITE_DT, BIGOO_NY)
+        VALUES
+        (
+            #{item.AUNTT_KB},
+            #{item.CARDD_NO},
+            #{item.CARDE_NO},
+            #{item.CARDD_KB},
+            #{item.OWNER_JN},
+            #{item.OWNBU_CD},
+            #{item.OWNER_NM},
+            #{item.KYULJ_DT},
+            #{item.ENDDD_DT},
+            #{item.DBANK_CD},
+            #{item.KYULJ_KD},
+            #{item.DDEPO_NO},
+            #{item.REMAR_KB},
+            #{item.BLENT_DT},
+            #{item.LIMIT_AF},
+            #{item.LIMIT_AK},
+            #{item.USEEE_KB},
+            #{item.PAYEE_CD},
+            TO_CHAR(sysdate, 'YYYYMMDD'),
+            #{item.BIGOO_NY}
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>   
+
+    <update id="saveGrid01UpdateData"> 
+	    <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+	    UPDATE AXTB1200 SET
+            CARDE_NO = #{item.CARDE_NO},
+            CARDD_KB = #{item.CARDD_KB},
+            OWNER_JN = #{item.OWNER_JN},
+            OWNBU_CD = #{item.OWNBU_CD},
+            OWNER_NM = #{item.OWNER_NM},
+            KYULJ_DT = #{item.KYULJ_DT},
+            ENDDD_DT = #{item.ENDDD_DT},
+            DBANK_CD = #{item.DBANK_CD},
+            KYULJ_KD = #{item.KYULJ_KD},
+            DDEPO_NO = #{item.DDEPO_NO},
+            REMAR_KB = #{item.REMAR_KB},
+            BLENT_DT = #{item.BLENT_DT},
+            LIMIT_AF = #{item.LIMIT_AF},
+            LIMIT_AK = #{item.LIMIT_AK},
+            USEEE_KB = #{item.USEEE_KB},
+            PAYEE_CD = #{item.PAYEE_CD},
+            BIGOO_NY = #{item.BIGOO_NY}
+        WHERE AUNTT_KB = #{item.AUNTT_KB}
+        AND   CARDD_NO = #{item.CARDD_NO}
+        </foreach>
+    </update>
+
+    <delete id="saveGrid01DeleteData">
+     	DELETE FROM AXTB1200
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (AUNTT_KB = #{item.AUNTT_KB}
+         AND CARDD_NO = #{item.CARDD_NO})
+        </foreach>
+        </where>
+     </delete>  
+</mapper>

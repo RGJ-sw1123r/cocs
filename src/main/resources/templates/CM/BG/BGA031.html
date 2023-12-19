@@ -1,0 +1,30 @@
+    <div th:fragment="modal_01" id="modal_01">
+        <div id="modal_body_01" style="height: 480px; display: flex">
+            <div class="modal_01_left" style="flex: 1">
+                <sbux-tree id="tree_02" name="tree_02" uitype="normal" empty-message="데이터가 존재하지 않습니다."
+                    jsondata-ref="viewX.treeData_02"
+                    onClick="viewX.addGJ_treeClick()">
+                </sbux-tree>
+            </div>
+            <div class="modal_01_right" style="flex: 1">
+                기술구분
+                <sbux-input id="input_gubu" name="input_gubu" uitype="text" disabled></sbux-input>
+                공사구분
+                <sbux-select id="select_gogu" name="select_gogu" uitype="single" auto-size="true"
+                    jsondata-ref="viewX.goguCodeJson"
+                    jsondata-text="GOGU_NAME"
+                    jsondata-value="GOGU_CODE">
+                </sbux-select>
+                <br />
+                대공종
+                <sbux-input id="input_lgoj" name="input_lgoj" uitype="text" disabled></sbux-input>
+                중공종
+                <sbux-input id="input_mgoj" name="input_mgoj" uitype="text" disabled></sbux-input>
+            </div>
+        </div>
+        <div id="modal_01_footer">
+            <sbux-button id="modal_01_button_01" name="modal_01_button_01" uitype="normal" text="추가" button-color="blue"
+                onclick="viewX.modal_addGJClick()">
+            </sbux-button>
+        </div>
+    </div>

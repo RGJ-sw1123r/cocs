@@ -1,0 +1,111 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        yearJson: Array.from({ length: 2023 - 2004 + 1 }, (_, index) => ({ text: (2004 + index).toString(), value: 2004 + index })),
+        jumsuJson: [],
+        treeData_01: [],
+        selectTree: function() {
+            exios.get('/api/ORA020/selectTree').then((response) => {
+                viewX.treeData_01 = response.data;
+                SBUxMethod.refresh("tree_01");
+            }).catch((error) => {
+                korbiztech.alert("MSG_GRID_GET_FAIL");
+                console.error("An error occurred:", error);
+            });
+        },
+        selectGrid: function() {
+            var treeStatus = SBUxMethod.getTreeStatus("tree_01");
+            var treeDepth = treeStatus[0].sbux_depth;
+
+            if (treeDepth == 2) {
+                var params = { 
+                    YEAR: $('#select_year').val(),
+                    BASEGONG: treeStatus[0].id
+                };
+                console.log(params);
+    
+                exios.get('/api/ORA020/selectGrid', params).then((response) => {
+                    console.log(response);
+                    viewX.gridData_01 = response.data;
+                    viewX.grid_01.refresh({'focus': false});
+                });
+            }
+        },
+        yearChange: function() {
+            viewX.selectGrid();
+        },
+        button_compClick: function() {
+            console.log('확정 버튼 클릭');
+        }
+    };
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                custompanel: ['refresh', 'save'],
+                columns: [
+                    { caption: ['선택'], ref: 'BASE_COMPYN', width: '40px', style: 'text-align:center', type: 'output' },
+                    { caption: ['사업자번호'], ref: 'BASE_BSNO', width: '80px', style: 'text-align:center', type: 'output' },
+                    { caption: ['업체명'], ref: 'BASE_NAME', width: '100px', style: 'text-align:left', type: 'output' },
+                    { caption: ['대표자'], ref: 'BASE_OWNAME', width: '70px', style: 'text-align:center', type: 'output' },
+                    { caption: ['평가자'], ref: 'BASE_PMAN', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['평가일자'], ref: 'BASE_PDATE', width: '60px', style: 'text-align:center', type: 'output' },
+                    // 점수(Combo)
+                    { caption: ['순위'], ref: 'BASE_JRANK', width: '40px', style: 'text-align:center', type: 'output' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectTree();
+    });
+</script>
+<style>
+    .flex-container {
+        display: flex;
+        margin-left: 10px;
+        /* align-items: flex-start */
+    }
+
+    .tree-container {
+        flex: 3;
+    }
+
+    .grid-container {
+        flex: 7;
+    }
+
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>협력업체확정</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        평가년도
+        <sbux-select id="select_year" name="select_year" uitype="single"
+            jsondata-ref="viewX.yearJson" onchange="viewX.yearChange()">
+        </sbux-select>
+        <sbux-button id="button_comp" name="button_comp" uitype="normal" text="확정"
+            onClick="viewX.button_compClick()">
+        </sbux-button>
+    </div>
+    <div class="flex-container">
+        <div class="tree-container">
+            <sbux-tree id="tree_01" name="tree_01" uitype="normal"empty-message="데이터가 존재하지 않습니다."
+                jsondata-ref="viewX.treeData_01"
+                jsondata-text="GONG_CODE"
+                onclick="viewX.selectGrid()">
+            </sbux-tree>
+        </div>
+        <div class="grid-container">
+            <div id="SBGridArea_01"></div>
+        </div>
+    </div>
+</body>

@@ -1,0 +1,99 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        selectGrid: function () {
+            exios.get('/api/BGA040/selectGrid').then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({'focus': false});
+            }).catch((e) => {
+                console.error(e.responseText);
+            })
+        },
+        saveGridData: function () {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/BGA040/grid_01/gridData';
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            var checkData = JSON.parse(sendData);
+
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_01', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(error);
+                }
+            }
+
+            if (checkData.length > 0) {
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var gridId = korbiztech.grid.getPureGridId(gridId);
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/BGA040/selectGrid';
+
+            exios.get(url).then((response) => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    return function () {
+                        if (showAlert !== flase) {
+                            korbiztech.alert('MSG_GRID_GET_SUCCESS');
+                        }
+                    };
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_GET_FAIL');
+                    console.error(error);
+                }
+            });
+        }
+    }  
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                custompanel: ['exportExcel', 'save'],
+                columns: [
+                    { caption: ['현장코드'], ref: 'SITE_CODE', width: '140px', style: 'text-align:center', type: 'output' },
+                    { caption: ['현장명'], ref: 'SITE_NAME', width: '400px', style: 'text-align:left', type: 'output' },
+                    { caption: ['차수'], ref: 'INFO_CHSU', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['차수코드'], ref: 'CHSU', hidden: true },
+                    { caption: ['확정여부'], ref: 'INFO_COMP', width: '60px', style: 'text-align:center', type: 'checkbox', typeinfo: { checkedvalue: '1', uncheckedvalue: '0' } }
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.grid_01.bind('click', 'viewX.renamingComp');
+        viewX.grid_01.bind('keydown', 'viewX.renamingComp');
+        viewX.selectGrid();
+    })
+</script>
+<style>
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>실행내역확정</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</html>

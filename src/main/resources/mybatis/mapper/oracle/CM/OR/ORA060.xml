@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORA060_DAO">
+
+    <select id="selectGubu" resultType="HashMap">
+        SELECT DISTINCT COMM_LNAME GONG_NAME, SUBSTR(GONG_CODE, 1, 1) GONG_CODE, '' AS PERM_CODE 
+        FROM TOR_GONG, TOR_COMM
+        WHERE SUBSTR(GONG_CODE, 1, 1) = COMM_LCODE(+)
+        AND COMM_OFFC(+) = '01'
+        AND COMM_GBN(+) = '01'
+        AND COMM_LCODE(+) <![CDATA[<> ]]> '00'
+        ORDER BY SUBSTR(GONG_CODE, 1, 1)
+    </select>
+
+    <select id="selectParentGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT CUST_BSNO, CUST_NAME
+        FROM TOR_CUST
+        WHERE CUST_KGBN = #{GONGCODE}
+        <!-- AND CUST_NAME LIKE '%' || #{BASENAME} || '%' -->
+        ORDER BY CUST_NAME
+    </select>
+
+    <select id="selectChildGrid_TP" parameterType="HashMap" resultType="HashMap">
+        SELECT A.SILD_BSNO, A.SILD_SEQ, A.SILD_OWNR, A.SILD_CONNM, A.SILD_YEAR,
+        SUBSTR(SILD_CONTAMT, 0, LENGTH(SILD_CONTAMT) - 3) SILD_CONTAMT,
+        (SELECT OWNR_NAME FROM TOR_OWNR WHERE OWNR_CODE = A.SILD_OWNR ) OWNR_NAME,
+        (SELECT PERM_NAME FROM TOR_PERM WHERE PERM_CODE = A.SILD_PERM ) PERM_NAME,
+        (SELECT MAX(CUST_NAME) FROM TOR_CUST WHERE CUST_BSNO = A.SILD_BSNO ) CUST_NAME
+        FROM TOR_SILD A
+        WHERE A.SILD_BSNO = #{BSNO}
+        ORDER BY SILD_SEQ
+    </select>
+</mapper>

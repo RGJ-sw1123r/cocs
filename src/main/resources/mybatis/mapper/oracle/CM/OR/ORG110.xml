@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORG110_DAO">
+
+    <select id="selectGubuGridData" resultType="HashMap">
+        SELECT COMM_GBN,COMM_GBNM FROM TOR_COMM
+        WHERE COMM_OFFC = '01'
+        AND COMM_LCODE || COMM_MCODE = '0000'
+        ORDER BY COMM_GBN
+    </select>
+
+    <select id="selectLgojGridData" parameterType="HashMap" resultType="HashMap">
+        SELECT COMM_GBN, COMM_LCODE, COMM_LNAME
+        FROM TOR_COMM
+        WHERE COMM_OFFC = '01'
+        AND COMM_GBN = #{COMM_GBN}
+        AND COMM_LCODE <![CDATA[ <> ]]> '00'
+        AND COMM_MCODE = '00'
+        <!-- AND COMM_LNAME LIKE '%' || #{COMM_LNAME} || '%' -->
+        ORDER BY COMM_GBN
+    </select>
+    
+    <select id="selectMgojGridData" parameterType="HashMap" resultType="HashMap">
+        SELECT COMM_GBN, COMM_LCODE, COMM_MCODE, COMM_MNAME
+        FROM TOR_COMM
+        WHERE COMM_OFFC = '01'
+        AND COMM_GBN = #{COMM_GBN}
+        AND COMM_LCODE = #{COMM_LCODE}
+        AND COMM_MCODE <![CDATA[ <> ]]> '00'
+        <!-- AND COMM_MNAME LIKE '%' || #{COMM_MNAME} || '%' -->
+        ORDER BY COMM_GBN
+    </select>
+</mapper>

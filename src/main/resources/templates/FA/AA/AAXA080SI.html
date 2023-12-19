@@ -1,0 +1,303 @@
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        selectedRow: '',
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+        saveGridData: (gridName) => {
+            console.log(gridName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(gridName);
+            var url = '/api/AAXA080SI/' + gridName + '/gridData';
+            console.log(variables.datagridVar)
+            console.log(variables.dataVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            var addData = {};
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                } catch (e) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(e);
+                }
+            };
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        selectList: () => {
+            let code = $("#code").val();
+            if (!code) code = '';
+            let dued = $("#DUED_DENY").val();
+            const searchCondition = {
+                code: code,
+                AUNTT_KB: '01',
+                dued: dued
+            };
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/AAXA080SI/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(() => {
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+
+        loadGridData: (gridId, showAlert) => {
+            console.log(gridId);
+            viewX.selectList();
+        },
+
+        getSelectedRows: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+        },
+
+        findAddr: (target) => {
+            new window.daum.Postcode({
+                oncomplete: function (data) {
+                    const zipCode = data.zonecode
+                    const address = data.buildingName ? data.address + " (" + data.buildingName + ")" : data.address
+                    console.log(zipCode + " " + address);
+                    console.log(target.id);
+                    console.log(data);
+                    var col = viewX.grid_01.getColRef("ADDRE_NY");
+                    console.log(viewX.selectedRow)
+
+                    $("#POST_CODE").val(zipCode);
+                    $("#ADDRE_NY").val(address);
+                    viewX.grid_01.setRowStatus(viewX.grid_01.getSelectedRows()[0], 'update');
+                }
+            }).open()
+        },
+
+        selectedSAUPJ_NM: (TNABU_CD) => {
+            console.log(TNABU_CD);
+            exios.get('/api/AAXA080SI/selectedSAUPJ_NM', { TNABU_CD: TNABU_CD }).then((response) => {
+                if (response.data.length === 0) {
+                    $("#TNABU_NM").val("미등록된 거래처");
+                } else {
+                    if (response.data[0].DEALR_NM) {
+                        $("#TNABU_NM").val(data[0].DEALR_NM);
+                    }
+                }
+            });
+        },
+    };
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['사업자번호'], ref: 'TXSAE_NO', width: '30%', style: 'text-align:center', type: 'output' },
+                    { caption: ['사업장명'], ref: 'SAUPJ_NM', width: '60%', style: 'text-align:center', type: 'input' },
+                    { caption: ['법인번호'], ref: 'BUPIN_NO', type: 'input', hidden: true },
+                    { caption: ['대표자명'], ref: 'DEALR_DP', type: 'input', hidden: true },
+                    { caption: ['주소'], ref: 'ADDRE_NY', type: 'input', hidden: true },
+                    { caption: ['전화번호'], ref: 'TELEP_NO', type: 'input', hidden: true },
+                    { caption: ['관할세무서코드'], ref: 'SEMOO_CD', type: 'input', hidden: true },
+                    { caption: ['관할세무서명'], ref: 'SEMOO_NM', type: 'input', hidden: true },
+                    { caption: ['신고사업자번호'], ref: 'TNABU_CD', type: 'input', hidden: true },
+                    { caption: ['신고사업장명'], ref: 'TNABU_NM', type: 'input', hidden: true },
+                    { caption: ['등록일'], ref: 'SAYNG_ST', type: 'input', hidden: true },
+                    { caption: ['종료일'], ref: 'SAYNG_ED', type: 'input', hidden: true },
+                ],
+                primarykey: ['ITEMM_KB'],
+                custompanel: ['refresh', 'delete', 'save'],
+            },
+        };
+
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_01.bind('click', 'viewX.getSelectedRows');
+        viewX.selectList();
+    });
+</script>
+
+<body>
+    <div class="menuPath-wrap">
+        <h3>부가세 신고단위</h3><!-- DNS - 제목 추가 -->
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        <div class="softbowl-form sortbox">
+            <div id="searchEcodeName" class="sortbox_inner">
+                <ul class="sortitem">
+                    <li>
+                        <span id="text">부가세 신고단위 :</span>
+                        <sbux-input id="code" name="code" uitype="text" minlength="0" maxlength="15"
+                            wrap-class="sbt-select" onchange="viewX.selectList(code)"></sbux-input>
+                    </li>
+                    <li>
+                        <span id="text">종료자료 제외하기 :</span>
+                        <sbux-checkbox id="DUED_DENY" name="DUED_DENY" uitype="normal" text-left-padding="5px"
+                            text-right-padding="25px" true-value="1" false-value="0"
+                            onchange="viewX.selectList(DUED_DENY)"></sbux-checkbox>
+                    </li>
+                </ul>
+                <div class="sort_btn">
+                    <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run"
+                        onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+                    <sbux-button id="" name="btn_norm_1" uitype="normal" text="출력" class="btn_run"
+                        onclick=""></sbux-button>
+                </div>
+            </div>
+        </div>
+        <div class="softbowl-grid">
+            <div style="display:flex;">
+                <div id="SBGridArea" style="width:60%;height:500px;float:center;"></div>
+                <div class="sbt-input-tab cocs-tabbox" style="width:60%;height:650px;float:center;">
+                    <div class="tab-content">
+                        <div id="tab_01" class="gene_info formsheet">
+                            <div class="sbt-tab-wrap">
+                                <div class="sbt-grid">
+                                    <div id="SBGridArea_01">
+                                        <p class="ntc_initial">
+                                            <span>필수 입력 항목</span>
+                                        </p>
+                                        <ul class="ipt_line">
+                                            <li class="initial">
+                                                <label for="TXSAE_NO" id="inner-text">사업자번호</label>
+                                                <sbux-input id="TXSAE_NO" name="TXSAE_NO" uitype="text"
+                                                    placeholder="사업자번호" minlength="0" maxlength="15"
+                                                    grid-id="viewX.grid_01" icon-glyphs="glyphicon-pencil"
+                                                    wrap-class="sbt-select" permit-keycodes-set="number"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="SAUPJ_NM" id="inner-text">사업장명</label>
+                                                <sbux-input id="SAUPJ_NM" name="SAUPJ_NM" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" disabled
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="BUPIN_NO" id="inner-text">법인번호</label>
+                                                <sbux-input id="BUPIN_NO" name="BUPIN_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" disabled
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="DEALR_DP" id="inner-text">대표자명</label>
+                                                <sbux-input id="DEALR_DP" name="DEALR_DP" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" disabled
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <hr>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="POST_CODE" id="inner-text">우편번호</label>
+                                                <sbux-input id="POST_CODE" name="POST_CODE" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                                <button type="button" id="addr2Bt" class="btn btn-default btn-sm"
+                                                    onclick="viewX.findAddr(POST_CODE)">
+                                                    <span class="glyphicon glyphicon-search"></span>
+                                                </button>
+                                            </li>
+                                            <li class="noblt col-check"></li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="ADDRE_NY" id="inner-text">주소</label>
+                                                <sbux-input id="ADDRE_NY" name="ADDRE_NY" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="TELEP_NO" id="inner-text">전화번호</label>
+                                                <sbux-input id="TELEP_NO" name="TELEP_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" auto-fill-phone-dashes="true"
+                                                    permit-keycodes-set="number" wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <hr>
+                                        <ul class="ipt_line">
+                                            <li class="initial">
+                                                <label for="SEMOO_CD" id="inner-text">관할세무서코드</label>
+                                                <sbux-input id="SEMOO_CD" name="SEMOO_CD" uitype="text" minlength="0"
+                                                    icon-glyphs="glyphicon-pencil" maxlength="15"
+                                                    grid-id="viewX.grid_01" permit-keycodes-set="number"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li class="initial">
+                                                <label for="SEMOO_NM" id="inner-text">관할세무서명 :</label>
+                                                <sbux-input id="SEMOO_NM" name="SEMOO_NM" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    icon-glyphs="glyphicon-pencil" wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li class="initial">
+                                                <label for="TNABU_CD" id="inner-text">신고사업자번호</label>
+                                                <sbux-input id="TNABU_CD" name="TNABU_CD" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    icon-glyphs="glyphicon-pencil" wrap-class="sbt-select"
+                                                    onchange="viewX.selectedSAUPJ_NM(TNABU_CD)"></sbux-input>
+                                                <sbux-input id="TNABU_NM" name="TNABU_NM" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" disabled
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <hr>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="SAYNG_ST" id="inner-text">등록일</label>
+                                                <sbux-datepicker id="SAYNG_ST" name="SAYNG_ST" uitype="popup"
+                                                    grid-id="viewX.grid_01" style="width:160px;"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="SAYNG_ED" id="inner-text">종료일</label>
+                                                <sbux-datepicker id="SAYNG_ED" name="SAYNG_ED" uitype="popup"
+                                                    grid-id="viewX.grid_01" style="width:160px;"></sbux-datepicker>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

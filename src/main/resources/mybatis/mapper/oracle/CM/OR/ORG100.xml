@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORG100_DAO">
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_OR = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_OR = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+
+    <select id="selectYear" resultType="HashMap">
+        SELECT YYYY, TODAYROWNUM
+        FROM YYYY, (
+            SELECT MAX(DECODE(YYYY, NOWYEAR, ROWNUM)) TODAYROWNUM
+            FROM YYYY, (
+                SELECT TO_CHAR(SYSDATE, 'YYYY') NOWYEAR FROM DUAL)
+            WHERE YYYY BETWEEN 2000 AND 2020)
+        WHERE YYYY BETWEEN 2000 AND 2020
+        ORDER BY YYYY
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT INDR_OFFICE, INDR_SITE, INDR_YEAR, INDR_GUBU,
+            B.GUBU_NAME GUBU_NAME ,INDR_GOGU,
+            C.GOGU_NAME, INDR_LGOJ,
+            D.LGOJ_NAME AS LGOJ_NAME, INDR_MGOJ,
+            E.MGOJ_NAME AS MGOJ_NAME, INDR_ITEM,
+            F.SILD_NAME AS ITEM_NAME, INDR_RATE
+        FROM TOR_INDR A, TBG_GUBU B, TBG_GOGU C, TBG_LGOJ D, TBG_MGOJ E, VBG_SILD F
+        WHERE A.INDR_OFFICE = F.SILD_OFFICE
+        AND A.INDR_SITE = F.SILD_SITE
+        AND A.INDR_GUBU = F.SILD_GUBU
+        AND A.INDR_GOGU = F.SILD_GOGU
+        AND A.INDR_LGOJ = F.SILD_LGOJ
+        AND A.INDR_MGOJ = F.SILD_MGOJ
+        AND A.INDR_ITEM = F.SILD_ITEM
+        AND A.INDR_GUBU = B.GUBU_CODE
+        AND A.INDR_OFFICE = C.GOGU_OFFICE
+        AND A.INDR_SITE = C.GOGU_SITE
+        AND A.INDR_GOGU = C.GOGU_CODE
+        AND A.INDR_GUBU = D.LGOJ_GUBU
+        AND A.INDR_LGOJ = D.LGOJ_CODE
+        AND A.INDR_GUBU = E.MGOJ_GUBU
+        AND A.INDR_LGOJ = E.MGOJ_LGOJ
+        AND A.INDR_MGOJ = E.MGOJ_CODE
+        AND INDR_SITE = #{SITE}
+        AND INDR_YEAR = #{YEAR}
+        ORDER BY INDR_OFFICE DESC
+    </select>
+</mapper>

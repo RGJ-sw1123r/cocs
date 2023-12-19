@@ -1,0 +1,99 @@
+<script>
+    var viewX = {
+        siteJson: [],
+        chsuJson: [],
+        selectSite: function () {
+            exios.get('/api/BGC010/selectSite').then((reponse) => {
+                viewX.siteJson = reponse.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectChsu();
+            });
+        },
+        selectChsu: function () {
+            var siteCode = $('#select_site').val();
+            var params = {SITE_CODE: siteCode}
+            exios.get('/api/BGC010/selectChsu', params).then((response) => {
+                console.log('selectChsu', response.data);
+                viewX.chsuJson = response.data;
+                SBUxMethod.refresh('select_chsu');
+                if (response.data.length > 0) {
+                    SBUxMethod.set('input_chsu', response.data[0].CHG_CHSU);
+                }
+            });
+        },
+        siteChange: function () {
+            viewX.selectChsu();
+        },
+        // 차수복사
+        button_copyChsuClick: function () {
+            // 0번째가 아니라 선택한 차수 select의 index값을 사용해야 함 => index를 어떻게...?
+            console.log(viewX.chsuJson);
+            console.log(viewX.chsuJson[0].CHG_CHSU);
+            // siteJson의 CFM_CHSU가 아니라 siteChsu의 CHG_CHSU 인가?????? 아 맞네.. ;; 
+            
+            var chsu = $('#select_chsu').val();
+            if (!chsu) {
+                SBUxMethod.openAlert('기존차수가 없습니다.')
+            } else if (chsu === '0') {
+                SBUxMethod.openAlert('가실행은 복사할 수 없습니다.');
+            } else if (viewX.chsuJson[0].CHG_CHSU === "") {
+                SBUxMethod.openAlert('변경차수가 없습니다.');
+            } else {
+                // 기존차수의 실행내역을 변경차수에 복사하시겠습니까?
+                // 쿼리: /BGC010_ctrl.jsp?Option=SL&select_gubun=2&INFO_SITE="+obj.Luxe_SITE.BindColVal+"&SILD_CHSU="+obj.CHG_CHSU.value;
+            }
+        }
+    };
+
+    $(function() {
+        viewX.selectSite();
+    });
+</script>
+<style>
+    .search-container {
+        width: 400px;
+        margin: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #select_site, #select_chsu, #input_chsu {
+        margin: 10px;
+    }
+
+    #button_copyChsu {
+        margin-top: 10px;
+        margin-left: 330px;
+    }
+
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>차수복사</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <sbux-button id="button_copyChsu" name="button_copyChsu" uitype="normal" text="차수복사"
+        onClick="viewX.button_copyChsuClick()">
+    </sbux-button>
+    <div class="search-container">
+        현장명
+        <sbux-select id="select_site" name="select_site" uitype="single" auto-size="true"
+            jsondata-ref="viewX.siteJson"
+            jsondata-text="SITE_NAME"
+            jsondata-value="SITE_CODE"
+            onchange="viewX.siteChange()">
+        </sbux-select>
+        기존차수
+        <sbux-select id="select_chsu" name="select_chsu" uitype="single" auto-size="true"
+            jsondata-ref="viewX.chsuJson"
+            jsondata-text="CHASU"
+            jsondata-value="INFO_CHSU"
+            onchange="viewX.chsuChange()">
+        </sbux-select>
+        변경차수
+        <sbux-input id="input_chsu" name="input_chsu" uitype="text" style="width: 36px" disabled></sbux-input>
+        계약단가적용
+        <sbux-checkbox id="checkbox_applyPrice" name="checkbox_applyPrice" uitype="normal" text="(체크시 계약 단가로 실행을 변경함)" true-value="1" false-value="0">
+        </sbux-checkbox>
+    </div>
+</html>

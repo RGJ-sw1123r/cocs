@@ -1,0 +1,153 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        yearJson: [],
+        saveGridData: function () {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/BGA010/grid_01/gridData';
+
+            var sendData = viewX[datagridVar].getUpdateData(false, 'all');
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            var checkData = JSON.parse(sendData);
+
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[datagridVar].clearStatus();
+                    viewX.loadGridData('viewX.grid_02', false);
+                } catch (error) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(error);                       
+                }
+            }
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: function (gridId, showAlert) {
+            var dataVar = 'gridData_01';
+            var datagridVar = 'grid_01';
+            var url = '/api/BGA010/selectChildGrid';
+            
+            var nRow = viewX.grid_01.getRow();
+            var siteCode = viewX.grid_01.getRowData(nRow).SITE_CODE;
+            var params = {GOGU_SITE: siteCode};
+
+            exios.get(url, params).then((response) => {
+                try {
+                    viewX[dataVar] = response.data;
+                    viewX[datagridVar].setGridData(viewX[dataVar], false);
+                    viewX[datagridVar].refresh({'focus': false});
+                    korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+                    return function () {
+                        if (showAlert !== false) {
+                            korbiztech.alert('MGS_GRID_GET_SUCCESS');
+                        }
+                    };
+                } catch (error) {
+                    korbiztech.alert('MGS_GRID_GET_FAIL');
+                    console.error(error);        
+                }
+            });
+        },
+        selectSite: function () {
+            exios.get('/api/ORG100/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+            });
+        },
+        selectYear: function () {
+            exios.get('/api/ORG100/selectYear').then((response) => {
+                viewX.yearJson = response.data;
+                SBUxMethod.refresh('select_year');
+            });
+        },
+        selectGrid: function () {
+            var params = {
+                SITE: $('#select_site').val(),
+                YEAR: $('#select_year').val()
+            };
+            exios.get('/api/ORG100/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        button_copyClick: function () {
+            // selectGrid와 동일 패러미터 사용
+            console.log('요율관리내역이 복사되었습니다.');
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                explorerbar: 'sort',
+                selectmode: 'byrow',
+                primarykey: [''],
+                custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                columns: [
+                    { caption: ['기술구분'], ref: 'GUBU_NAME', width: '125px', style: 'text-align:left', type: 'input' },
+                    { caption: ['공구'], ref: 'GOGU_NAME', width: '125px', style: 'text-align:left', type: 'input' },
+                    { caption: ['대공종'], ref: 'LGOJ_NAME', width: '123px', style: 'text-align:left', type: 'input' },
+                    { caption: ['중공종'], ref: 'MGOJ_NAME', width: '123px', style: 'text-align:left', type: 'input' },
+                    { caption: ['Item'], ref: 'ITEM_NAME', width: '123px', style: 'text-align:left', type: 'input' },
+                    { caption: ['요율'], ref: 'INDR_RATE', width: '123px', style: 'text-align:left', type: 'input' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectSite();
+        viewX.selectYear();
+    })
+</script>
+<style>
+</style>
+<html>
+<div class="menuPath-wrap">
+    <h3>간접비요율관리</h3>
+    <div class="menuPath-title"></div>
+</div>
+<div class="softbowl-form sortbox">
+    현장명
+    <sbux-select id="select_site" name="select_site" uitype="single"
+        jsondata-ref="viewX.siteJson"
+        jsondata-text="SITE_NAME"
+        jsondata-value="SITE_CODE"
+        onchange="viewX.selectGrid()">
+    </sbux-select>
+    년도
+    <sbux-select id="select_year" name="select_year" uitype="single"
+        jsondata-ref="viewX.yearJson"
+        jsondata-text="YYYY"
+        jsondata-value="YYYY"
+        onchange="viewX.selectGrid()">
+    </sbux-select>
+    <sbux-button id="button_copy" name="button_copy" uitype="normal" text="전년도자료복사" onclick="viewX.button_copyClick()"></sbux-button>
+</div>
+<div class="grid-container">
+    <div id="SBGridArea_01"></div>
+</div>
+</html>

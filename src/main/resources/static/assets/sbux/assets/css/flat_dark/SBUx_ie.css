@@ -1,0 +1,99 @@
+.sbux-sel-chk-btn {
+	padding: 4px 4px 4px 5px;
+	background : none
+}
+
+/*select.sbux-sel {background:none;}*/
+
+/* select[disabled].sbux-sel,select.disabled.sbux-sel,select[readonly].sbux-sel,select.readonly.sbux-sel {background-color: rgba(255,255,255,0.16);} */
+
+.sbux-sel option:checked, .sbux-sel option:active {
+    color:rgba(255,255,255,0.87) !important;
+    background: #282828;}
+
+.sbux-inp-btn-group .sbux-inp-fr-span > button.glyphicon span, .sbux-inp-btn-group .sbux-inp-bk-span > button.glyphicon span {
+	vertical-align: middle;
+}
+
+table.sbux-pik-pop-day thead th .sbux-pik-sel-wrap .sbux-pik-sel {padding:0 15px 0 2px;}
+
+/* 2019-03-08 ahn */
+ul.sbux-tre-bd li.sbux-tre-item-chl-wrap ul.sbux-tre-item-chl-chl:before {
+	top: -9px !important;
+	height: 100% !important;
+}
+.sbux-sel-form > div.sbux-sel-form-wrap button.sbux-sel-form-btn i {
+	/* padding-top:5px; */
+	padding-bottom:6px;
+}
+/***********************************************************/
+/* textarea resize */
+/***********************************************************/
+.sbux-resize-wrap {
+	position: relative !important;
+}
+.ui-resizable-se {
+	bottom: 17px;
+}
+.ui-icon-gripsmall-diagonal-se {
+	/*background-position: -64px -224px;*/
+}
+.ui-icon, .ui-widget-content .ui-icon {
+	/*background-image: url(../images/ui-icons_444444_256x240.png);*/
+	background-image: url(../images/resize-icon.png);
+}
+.ui-icon {
+	width: 16px;
+	height: 16px;
+}
+.ui-resizable-se {
+	cursor: se-resize;
+	right: 1px;
+}
+.ui-resizable-handle {
+	position: absolute;
+	font-size: 0.1px;
+	display: block;
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.ui-icon {
+	vertical-align: middle;
+	margin-top: -.25em;
+	text-indent: -99999px;
+	overflow: hidden;
+	background-repeat: no-repeat;
+}
+
+input.sbux-inp-input.sbux-inp-ie-clear ::-ms-clear , input.sbux-inp-input.sbux-inp-ie-clear ::-ms-reveal {display: none;}
+
+
+/*2021-02-25*/
+select[disabled],select.disabled{
+	background:url(images/select-caret-readonly.png) no-repeat !important; 
+	background-position: right 10px center !important; 
+	background-color:rgba(255,255,255,0.1) !important;
+}
+select{-webkit-appearance: none; appearance: none;}
+select::-ms-expand {display:none}
+
+.sbux-pik-time-wrap .sbux-pik-time .sbux-pik-hour-wrap .plus em, .sbux-pik-time-wrap .sbux-pik-time .sbux-pik-minute-wrap .plus em{
+	-ms-user-select: none !important;
+}
+.sbux-pik-time-wrap .sbux-pik-time .sbux-pik-hour-wrap .minus em, .sbux-pik-time-wrap .sbux-pik-time .sbux-pik-minute-wrap .minus em{
+	-ms-user-select: none !important;
+}
+select::-ms-expand {
+    display: none;
+}
+a.sbux-sel-chk-btn{
+	border:0 !important;
+}
+.sbux-sel-chk.open .sbux-sel-chk-wrap{
+	width:100%;
+}
+.sbux-sel-chk ul.sbux-sel-chk-wrap{
+	top:31px;
+}
+/*2021-03-04 Redmine #5365*/
+.sbux-gal-close{padding:0;}

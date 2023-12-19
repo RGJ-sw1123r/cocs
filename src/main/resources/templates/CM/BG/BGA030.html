@@ -1,0 +1,1312 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {}, grid_04: {}, grid_05: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {}, gridData_04: {}, gridData_05: {},
+        uploadFilesJson: {},
+        siteCodeJson: [], chsuJson: [], goguCodeJson: [],
+        gubuCodeJson_01: [], gubuCodeJson_02: [],
+        treeData_01: [], treeData_02: [],
+        orgGridData_01: [],
+        totalName: "",
+        siteCode: "",
+        chsu: "",
+        treeStatus: "",
+        treeLevel: "",
+        // 그리드 내 상태 값이 있는 데이터 조작(저장, 추가, 삭제)
+        saveGridData: function (gridId) {
+            var gridId = korbiztech.grid.getPureGridId(gridId);
+
+            viewX.siteCode = $("#select_siteCode").val();
+            viewX.chsu = $("#select_chsu").val();
+            var treeId = SBUxMethod.getTreeStatus("tree_01")[0].id;
+            var gubu = treeId.substring(0, 1);
+            var gogu = treeId.substring(1, 4);
+            var lgoj = treeId.substring(4, 6);
+            var mgoj = treeId.substring(6, 8);
+
+            if (gridId === "grid_01") {
+                var dataVar = "gridData_01";
+                var datagridVar = "grid_01";
+                var url = "/api/BGA030/" + gridId + "/gridData";
+
+                var sendData = viewX[datagridVar].getUpdateData(false, "all");
+                var addData = {
+                    SILD_SITE: viewX.siteCode,
+                    SILD_CHSU: viewX.chsu,
+                    SILD_GUBU: gubu,
+                    SILD_GOGU: gogu,
+                    SILD_LGOJ: lgoj,
+                    SILD_MGOJ: mgoj,
+                };
+                sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+                var checkData = JSON.parse(sendData);
+
+                var performSave = function () {
+					exios.put(url, sendData)
+						.then((response) => {
+							korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+							viewX[datagridVar].clearStatus();
+							viewX.loadGridData(gridId, false);
+						})
+						.catch((error) => {
+							korbiztech.alert('MSG_GRID_SAVE_FAIL');
+							console.error('An error occurred:', error);
+						});
+                };
+
+                if (checkData.length > 0) {
+                    var primarykey = viewX[datagridVar].primarykey;
+                    if (primarykey.length === 1) {
+                        if (!korbiztech.gridAction.checkSingleKey(checkData, dataVar, datagridVar, primarykey[0])) return;
+                    } else if (primarykey.length > 1) {
+                        if (!korbiztech.gridAction.checkCompositeKey(checkData, dataVar, datagridVar, primarykey)) return;
+                    } else {
+                        korbiztech.alert("MSG_GRID_PK_NOT_DEFINED");
+                        return;
+                    }
+                    performSave();
+                } else {
+                    korbiztech.alert("MSG_GRID_NO_CHANGES");
+                }
+            } else if (gridId === "grid_02") {
+                var dataVar = "gridData_02";
+                var datagridVar = "grid_02";
+                var url = "/api/BGA030/" + gridId + "/gridData";
+
+                var item = viewX.grid_01.getRowData(viewX.grid_01.getRow()).SILD_ITEM;
+
+                var sendData = viewX[datagridVar].getUpdateData(false, "all");
+                var addData = {
+                    SILD_SITE: viewX.siteCode,
+                    SILD_CHSU: viewX.chsu,
+                    SILD_GUBU: gubu,
+                    SILD_GOGU: gogu,
+                    SILD_LGOJ: lgoj,
+                    SILD_MGOJ: mgoj,
+                    SILD_ITEM: item,
+                };
+                sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+                var checkData = JSON.parse(sendData);
+
+                var performSave = function () {
+					exios.put(url, sendData)
+						.then((response) => {
+							korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+							viewX[datagridVar].clearStatus();
+							viewX.loadGridData(gridId, false);
+							viewX.loadGridData('grid_01', false);
+							viewX.grid_01.refresh({'focus': false});
+						})
+						.catch((error) => {
+							korbiztech.alert('MSG_GRID_SAVE_FAIL');
+							console.error('An error occurred:', error);
+						});
+                };
+
+                if (checkData.length > 0) {
+                    performSave();
+                } else {
+                    korbiztech.alert("MSG_GRID_NO_CHANGES");
+                }
+            } else if (gridId === "grid_03") {
+                var dataVar = "gridData_03";
+                var datagridVar = "grid_03";
+                var url = "/api/BGA030/" + gridId + "/gridData";
+
+                var sendData = viewX[datagridVar].getUpdateData(false, "all");
+                var checkData = JSON.parse(sendData);
+
+                if (checkData.length > 0) {
+                    performSave();
+                } else {
+                    korbiztech.alert("MSG_GRID_NO_CHANGES");
+                }
+            }
+        },
+        // 그리드 내 데이터 조작 직후 조회
+        loadGridData: function (gridId, showAlert) {
+            var gridId = korbiztech.grid.getPureGridId(gridId);
+
+            viewX.siteCode = $("#select_siteCode").val();
+            viewX.chsu = $("#select_chsu").val();
+
+            if (gridId === "grid_01") {
+                var dataVar = "gridData_01";
+                var datagridVar = "grid_01";
+                var url = "/api/BGA030/selectParentGrid";
+
+                var treeId = SBUxMethod.getTreeStatus("tree_01")[0].id;
+                var gubu = treeId.substring(0, 1);
+                var gogu = treeId.substring(1, 4);
+                var lgoj = treeId.substring(4, 6);
+                var mgoj = treeId.substring(6, 8);
+
+                var params = {
+                    siteCode: viewX.siteCode,
+                    chsu: viewX.chsu,
+                    gubu: gubu,
+                    gogu: gogu,
+                    lgoj: lgoj,
+                    mgoj: mgoj,
+                };
+                
+                exios.get(url, params).then((response) => {
+					viewX[dataVar] = response.data;
+					viewX[datagridVar].setGridData(viewX[dataVar], false);
+					viewX[datagridVar].refresh({'focus': false});
+					korbiztech.gridAction.disablePrimaryKeyCells(datagridVar);
+					if (showAlert !== false) {
+						korbiztech.alert("MSG_GRID_GET_SUCCESS");
+					}
+				}).catch((error) => {
+					korbiztech.alert("MSG_GRID_GET_FAIL");
+					console.error("An error occurred:", error);
+				});
+            } else if (gridId === "grid_02") {
+                var nRow = viewX.grid_01.getRow();
+                if (nRow > 1) {
+                    var rowData = viewX.grid_01.getRowData(nRow);
+                    var params = {
+                        siteCode: viewX.siteCode,
+                        chsu: viewX.chsu,
+                        gubu: rowData["SILD_GUBU"],
+                        gogu: rowData["SILD_GOGU"],
+                        lgoj: rowData["SILD_LGOJ"],
+                        mgoj: rowData["SILD_MGOJ"],
+                        item: rowData["SILD_ITEM"],
+                    };
+                    
+                    exios.get("/api/BGA030/selectChildGrid", params).then((response) => {
+				        viewX.gridData_02 = response.data;
+				        viewX.grid_02.setGridData(viewX.gridData_02, false);
+				        viewX.grid_02.refresh({'focus': false});
+				    }).catch((error) => {
+				        korbiztech.alert("MSG_GRID_GET_FAIL");
+				        console.error("An error occurred:", error);
+				    });
+                }
+            }
+        },
+        // 현장명 변경
+        siteChange: function () {
+            SBUxMethod.hide("label_comp");
+            SBUxMethod.hide("button_addGJ");
+            SBUxMethod.hide("button_addItem");
+            SBUxMethod.hide("button_divideItem");
+            viewX.selectChsu();
+            viewX.grid_01.setGridData([], false);
+            viewX.grid_01.refresh({'focus': false});
+            viewX.grid_02.setGridData([], false);
+            viewX.grid_02.refresh({'focus': false});
+        },
+        // 명칭 검색
+        itemNameSearch: function (input_itemName) {
+            if (input_itemName) {
+
+                viewX.siteCode = $("#select_siteCode").val();
+                viewX.chsu = $("#select_chsu").val();
+                var input_itemName = input_itemName.trim();
+
+                viewX.treeStatus = SBUxMethod.getTreeStatus("tree_01");
+                if (viewX.treeStatus) {
+                    var treeId = (SBUxMethod.getTreeStatus("tree_01"))[0].id;
+                    var gubu = treeId.substring(0, 1);
+                    var gogu = treeId.substring(1, 4);
+                    var lgoj = treeId.substring(4, 6);
+                    var mgoj = treeId.substring(6, 8);
+
+                    var params = {
+                        siteCode: viewX.siteCode,
+                        chsu: viewX.chsu,
+                        gubu: gubu,
+                        gogu: gogu,
+                        lgoj: lgoj,
+                        mgoj: mgoj,
+                        input_itemName: input_itemName,
+                    };
+                    
+                    exios.get("/api/BGA030/selectParentGrid", params).then((response) => {
+						viewX.grid_01.setGridData(response.data, false);
+				        viewX.grid_01.refresh({'focus': false});
+						SBUxMethod.focus("input_itemName");
+				    }).catch((error) => {
+				        korbiztech.alert("MSG_GRID_GET_FAIL");
+				        console.error("An error occurred:", error);
+				    });
+                }
+            } else {
+                viewX.grid_01.setGridData(viewX.orgGridData_01, false);
+				viewX.grid_01.refresh({'focus': false});
+                SBUxMethod.focus("input_itemName");
+            }
+        },
+        // 메인 그리드 내 클릭
+        parentGridClick: function () {
+			if (viewX.treeLevel <= 3) return;
+            viewX.grid_02.clearStatus();
+            var nRow = viewX.grid_01.getRow();
+            if (nRow > 1) {
+                viewX.siteCode = $("#select_siteCode").val();
+                viewX.chsu = $("#select_chsu").val();
+                var rowData = viewX.grid_01.getRowData(nRow);
+                var params = {
+                    siteCode: viewX.siteCode,
+                    chsu: viewX.chsu,
+                    gubu: rowData["SILD_GUBU"],
+                    gogu: rowData["SILD_GOGU"],
+                    lgoj: rowData["SILD_LGOJ"],
+                    mgoj: rowData["SILD_MGOJ"],
+                    item: rowData["SILD_ITEM"],
+                };
+                viewX.selectChildGrid(params);
+            }
+        },
+        // 서브 그리드 값 변경
+        childGridValueChanged: function () {
+            // row의 status를 클릭하여 변경된 데이터를 undo할 시 합계 row는 값이 원복되지 않는 문제 있음.
+            if (viewX.grid_02.getRow() < 5) {
+                viewX.grid_02.setRowStatus(1, "update");
+            } else {
+                viewX.grid_02.setRowStatus(5, "update");
+            }
+
+            // 항목별 금액 계산(수량*단가)
+            var dqnty = Number(viewX.grid_02.getCellData(1, 3));
+            var sqnty = Number(viewX.grid_02.getCellData(5, 3));
+            for (var i = 2; i <= 12; i++) {
+                if (i < 6) {
+                    viewX.grid_02.setCellData(i, 5, dqnty * Number(viewX.grid_02.getCellData(i, 4)), true);
+                } else {
+                    viewX.grid_02.setCellData(i, 5, sqnty * Number(viewX.grid_02.getCellData(i, 4)), true);
+                }
+            }
+
+            // 도급 단가 총합
+            viewX.grid_02.setCellData(1, 4, Number(viewX.grid_02.getCellData(2, 4)) +
+                    Number(viewX.grid_02.getCellData(3, 4)) + Number(viewX.grid_02.getCellData(4, 4)), true);
+            // 도급 금액 총합
+            viewX.grid_02.setCellData(1, 5, Number(viewX.grid_02.getCellData(2, 5)) +
+                    Number(viewX.grid_02.getCellData(3, 5)) + Number(viewX.grid_02.getCellData(4, 5)), true);
+            // 실행 단가 총합
+            viewX.grid_02.setCellData(5, 4,
+                    Number(viewX.grid_02.getCellData(6, 4)) +
+                    Number(viewX.grid_02.getCellData(7, 4)) +
+                    Number(viewX.grid_02.getCellData(8, 4)) +
+                    Number(viewX.grid_02.getCellData(9, 4)) +
+                    Number(viewX.grid_02.getCellData(10, 4)) +
+                    Number(viewX.grid_02.getCellData(11, 4)) +
+                    Number(viewX.grid_02.getCellData(12, 4)), true);
+            // 실행 금액 총합
+            viewX.grid_02.setCellData(5, 5,
+                    Number(viewX.grid_02.getCellData(6, 5)) +
+                    Number(viewX.grid_02.getCellData(7, 5)) +
+                    Number(viewX.grid_02.getCellData(8, 5)) +
+                    Number(viewX.grid_02.getCellData(9, 5)) +
+                    Number(viewX.grid_02.getCellData(10, 5)) +
+                    Number(viewX.grid_02.getCellData(11, 5)) +
+                    Number(viewX.grid_02.getCellData(12, 5))
+            );
+        },
+        // 트리 클릭
+        treeClick: function () {
+            viewX.treeStatus = SBUxMethod.getTreeStatus("tree_01");
+            if (viewX.treeStatus) {
+                viewX.treeLevel = viewX.treeStatus[0].customData.LEVEL_CD;
+                
+                var treeText = viewX.treeStatus[0].text;
+                viewX.totalName = treeText + " 합계";
+                
+                viewX.siteCode = $("#select_siteCode").val();
+                viewX.chsu = $("#select_chsu").val();
+                
+                var treeId = viewX.treeStatus[0].id;
+                var gubu = treeId.substring(0, 1);
+                var gogu = treeId.substring(1, 4);
+                var lgoj = treeId.substring(4, 6);
+                var mgoj = treeId.substring(6, 8);
+    
+                var params = {
+                    siteCode: viewX.siteCode,
+                    chsu: viewX.chsu,
+                    gubu: gubu,
+                    gogu: gogu,
+                    lgoj: lgoj,
+                    mgoj: mgoj,
+                };
+    
+                if (viewX.treeLevel === 3) {
+                    exios.get("/api/BGA030/selectThreeTree", params).then((response) => {
+						viewX.createGrid_01();
+						viewX.grid_01.setGridData(response.data, false);
+				        viewX.grid_01.refresh({'focus': false});
+						viewX.grid_02.setGridData([], false);
+				        viewX.grid_02.refresh({'focus': false});
+				    }).catch((error) => {
+				        korbiztech.alert("MSG_GRID_GET_FAIL");
+				        console.error("An error occurred:", error);
+				    });
+                }
+    
+                if (viewX.treeLevel === 4) {
+                    viewX.createGrid_01();
+                    viewX.grid_02.setGridData([], false);
+                    viewX.grid_02.refresh({'focus': false});
+                    viewX.selectParentGrid(gubu, gogu, lgoj, mgoj);
+                }
+                viewX.grid_01.clearStatus();
+                viewX.grid_02.clearStatus();
+            }
+        },
+        // 공종추가 모달 열기 버튼 클릭
+        button_addGJClick: function () {
+			exios.get("/api/BGA030/selectAddGJ").then((response) => {
+				viewX.treeData_02 = response.data;
+				SBUxMethod.refresh("tree_02");
+                SBUxMethod.set("input_gubu", viewX.treeData_02[0].NAME1);
+                SBUxMethod.set("input_mgoj", null);
+                SBUxMethod.set("input_lgoj", null);
+		    });
+
+            viewX.siteCode = $("#select_siteCode").val();
+            var params = { siteCode: viewX.siteCode };
+
+            exios.get("/api/BGA030/selectGogu", params).then((response) => {
+				viewX.goguCodeJson = response.data;
+				SBUxMethod.refresh("select_gogu");
+		    });
+        },
+        // 공종추가 내 트리 클릭
+        addGJ_treeClick: function () {
+            viewX.treeStatus = SBUxMethod.getTreeStatus("tree_02")[0];
+            viewX.treeLevel = viewX.treeStatus.customData.LEVEL_CD;
+            var treeName1 = viewX.treeStatus.customData.NAME1;
+            var treeName2 = viewX.treeStatus.customData.NAME2;
+            var treeName3 = viewX.treeStatus.customData.NAME3;
+
+            switch (viewX.treeLevel) {
+                case 1:
+                    SBUxMethod.set("input_gubu", treeName1);
+                    SBUxMethod.set("input_lgoj", null);
+                    SBUxMethod.set("input_mgoj", null);
+                    break;
+                case 2:
+                    SBUxMethod.set("input_gubu", treeName1);
+                    SBUxMethod.set("input_lgoj", treeName2);
+                    SBUxMethod.set("input_mgoj", null);
+                    break;
+                case 3:
+                    SBUxMethod.set("input_gubu", treeName1);
+                    SBUxMethod.set("input_lgoj", treeName2);
+                    SBUxMethod.set("input_mgoj", treeName3);
+                    break;
+                default:
+                    break;
+            }
+        },
+        // 공종추가 모달 내 추가 버튼 클릭
+        modal_addGJClick: function () {
+            viewX.treeStatus = SBUxMethod.getTreeStatus("tree_02")[0].customData;
+            if (viewX.treeStatus) {
+                viewX.siteCode = $("#select_siteCode").val();
+                viewX.chsu = $("#select_chsu").val();
+                var gubu = viewX.treeStatus.CODE1;
+                var gogu = $("#select_gogu").val();
+                var lgoj = viewX.treeStatus.CODE2;
+                var mgoj = viewX.treeStatus.CODE3;
+                
+                if (mgoj) {
+                    var params = {
+                        siteCode: viewX.siteCode,
+                        chsu: viewX.chsu,
+                        gubu: gubu,
+                        gogu: gogu,
+                        lgoj: lgoj,
+                        mgoj: mgoj,
+                    };
+                    
+                    // 추후 쿼리에서 가져오도록 수정 예정
+                    var selectedId = `${gubu}${gogu}${lgoj}${mgoj}`;
+                    
+                    exios.get("/api/BGA030/selectFourTree", params).then((response) => {
+				        const data = response.data;
+				        if (data.length > 0) {
+				            const filteredData = data.filter((item) => item.LEVEL_CD === 4);
+				            const isDuplicated = filteredData.some((item) => item.id === selectedId);
+				            
+				            if (!isDuplicated) {
+				                exios.post("/api/BGA030/insertAddGJ", params).then(() => {
+			                        korbiztech.alert("MSG_GRID_SAVE_SUCCESS");
+			                        viewX.selectTree();
+			                        SBUxMethod.closeModal("modal_01");
+			                    }).catch((error) => {
+			                        korbiztech.alert("MSG_GRID_SAVE_FAIL");
+			                        console.error("An error occurred:", error);
+			                    });
+				            } else {
+				                korbiztech.alert("MSG_GRID_KEY_DUPLICATE");
+				            }
+				        } else {
+				            exios.post("/api/BGA030/insertAddGJ", params).then(() => {
+			                    korbiztech.alert("MSG_GRID_SAVE_SUCCESS");
+			                    viewX.selectTree();
+			                    SBUxMethod.closeModal("modal_01");
+			                }).catch((error) => {
+			                    korbiztech.alert("MSG_GRID_SAVE_FAIL");
+			                    console.error("An error occurred:", error);
+			                });
+				        }
+				    }).catch((error) => {
+				        korbiztech.alert("MSG_GRID_GET_FAIL");
+				        console.error("An error occurred:", error);
+				    });
+                } else {
+                    korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+                }
+            } else {
+                korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+            }
+        },
+        // 내역추가 모달 열기 버튼 클릭
+        button_addItemClick: function () {
+            viewX.treeStatus = SBUxMethod.getTreeStatus("tree_01");
+            if (viewX.treeStatus) {
+                viewX.treeStatus = viewX.treeStatus[0];
+                viewX.treeLevel = viewX.treeStatus.customData.LEVEL_CD;
+
+                if (viewX.treeLevel === 4) {
+                    if (viewX.grid_01.isEditMode) {
+                        SBUxMethod.openModal("modal_02");
+					    viewX.createGrid_03();
+					    viewX.grid_03.lockGrid(true);
+                        exios.get("/api/BGA030/selectGubu").then((response) => {
+						    viewX.gubuCodeJson_01 = response.data;
+						    return SBUxMethod.refresh("select_add_gubu");
+						}).then(() => {
+						    const gubu = $("#select_add_gubu").val();
+						    const params = { gubu: gubu };
+						    return exios.get("/api/BGA030/selectAddItem", params);
+						}).then((response) => {
+						    viewX.gridData_03 = response.data;
+						    viewX.grid_03.setGridData(response.data, false);
+						    viewX.grid_03.refresh({'focus': false});
+						}).catch((error) => {
+						    korbiztech.alert("MSG_GRID_GET_FAIL");
+						    console.error("An error occurred:", error);
+						}).finally(() => {
+					        viewX.grid_03.lockGrid(false);
+					    });
+                    } else {
+                        korbiztech.alert("MSG_GRID_EDIT_MODE_ONLY");
+                    }
+                } else {
+                    korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+                }
+            } else {
+                korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+            }
+        },
+        // 내역추가 모달 내 기술구분 변경
+        addGubuChange: function () {
+            var gubu =  $("#select_add_gubu").val();
+            var params = { gubu: gubu };
+            
+            viewX.grid_03.lockGrid(true);
+            exios.get("/api/BGA030/selectAddItem", params).then((response) => {
+		        viewX.gridData_03 = response.data;
+		        viewX.createGrid_03();
+		        viewX.grid_03.setGridData(response.data, false);
+		        viewX.grid_03.refresh({'focus': false});
+		    }).catch((error) => {
+		        korbiztech.alert("MSG_GRID_GET_FAIL");
+		        console.error("An error occurred:", error);
+		    }).finally(() => {
+		        viewX.grid_03.lockGrid(false);
+		    });
+        },
+        // 내역추가 모달 내 명칭 검색
+        addGJ_itemNameSearch: function (addGJ_input_itemName) {
+            var addGJ_input_itemName = addGJ_input_itemName.trim();
+
+            var gubu =  $("#select_add_gubu").val();
+            var params = { gubu: gubu, input_itemName: addGJ_input_itemName };
+
+			viewX.grid_03.lockGrid(true);
+			exios.get("/api/BGA030/selectAddItem", params).then((response) => {
+		        viewX.gridData_03 = response.data;
+		        viewX.grid_03.setGridData(response.data, false);
+		        viewX.grid_03.refresh({'focus': false});
+		        SBUxMethod.focus("addGJ_input_itemName");
+		    }).catch((error) => {
+		        korbiztech.alert("MSG_GRID_GET_FAIL");
+		        console.error("An error occurred:", error);
+		    }).finally(() => {
+		        viewX.grid_03.lockGrid(false);
+		    });
+        },
+        // 내역추가 모달 내 추가 버튼 클릭
+        modal_addItemClick: function () {
+            var checkedItems = viewX.gridData_03.filter(
+                (item) => item.CHECKBOX === "1"
+            );
+
+            if (checkedItems.length === 0) {
+                korbiztech.alert("MSG_GRID_NO_CHANGES");
+                return;
+            }
+
+            var addedItems = [];
+            var duplicatedItems = [];
+
+            checkedItems.forEach((checkedItem) => {
+                var isDuplicated = viewX.gridData_01.some(
+                    (originalItem) => originalItem.SILD_ITEM === checkedItem.ITEM_CODE
+                );
+
+                if (!isDuplicated) {
+                    addedItems.push({
+                        SILD_ITEM: checkedItem.ITEM_CODE,
+                        SILD_NAME: checkedItem.ITEM_NAME,
+                        SILD_SIZE: checkedItem.ITEM_SIZE,
+                        SILD_UNIT: checkedItem.ITEM_UNIT,
+                    });
+                } else {
+                    duplicatedItems.push({SILD_ITEM: checkedItem.ITEM_CODE});
+                }
+            });
+
+            if (addedItems.length > 0) {
+                viewX.grid_01.addRows(addedItems);
+            }
+
+            korbiztech.alert("MSG_GRID_ROWS_DISTINCT_ADDED", duplicatedItems.length, addedItems.length);
+            SBUxMethod.closeModal("modal_02");
+        },
+        // 내역분할 모달 열기 버튼 클릭
+        button_divideItemClick: function () {
+            SBUxMethod.set("input_itemCode", null);
+            SBUxMethod.set("divideItem_input_itemName", null);
+            SBUxMethod.set("input_size", null);
+            SBUxMethod.set("input_unit", null);
+
+            viewX.treeStatus = SBUxMethod.getTreeStatus("tree_01");
+
+            if (viewX.treeStatus) {
+                viewX.treeLevel = viewX.treeStatus[0].customData.LEVEL_CD;
+                
+                viewX.siteCode = $("#select_siteCode").val();
+                viewX.chsu = $("#select_chsu").val();
+                
+                var getRow = viewX.grid_01.getRow();
+                var getRowData = viewX.grid_01.getRowData(viewX.grid_01.getRow());
+                
+                if (viewX.treeLevel === 4) {
+                    if (!viewX.grid_01.isEditMode) {
+                        if (getRow > 2) {
+                            SBUxMethod.openModal("modal_03");
+    
+                            var params = {
+                                siteCode: viewX.siteCode,
+                                chsu: viewX.chsu,
+                                gubu: getRowData.SILD_GUBU,
+                                gogu: getRowData.SILD_GOGU,
+                                lgoj: getRowData.SILD_LGOJ,
+                                mgoj: getRowData.SILD_MGOJ,
+                                item: getRowData.SILD_ITEM,
+                            };
+
+					        viewX.createGrid_04();
+    						viewX.grid_04.lockGrid(true);
+    						exios.get("/api/BGA030/selectDivideItem", params).then((response) => {
+						        const data = response.data;
+						        viewX.grid_04.setGridData(data, false);
+						        viewX.grid_04.refresh({'focus': false});
+						        return data;
+						    }).then((data) => {
+						        const setCellProperties = (view, ranges) => {
+						            ranges.forEach((range) => {
+						                const [startRow, startCol, endRow, endCol] = range.range;
+						                const disabled = range.disabled;
+
+						                view.grid_04.setCellDisabled(startRow, startCol, endRow, endCol, disabled);
+						                view.grid_04.setCellStyles(startRow, startCol, endRow, endCol, "background : #EFEFEF;");
+						            });
+						        };
+						        const cellRanges = [
+						            { range: [3, 1, 14, 5], disabled: true },
+						            { range: [4, 6, 6, 6], disabled: true },
+						            { range: [8, 6, 14, 6], disabled: true },
+						            { range: [3, 8, 14, 8], disabled: true },
+						            { range: [4, 9, 6, 9], disabled: true },
+						            { range: [8, 9, 14, 9], disabled: true },
+						            { range: [3, 11, 14, 11], disabled: true },
+						        ];
+						        setCellProperties(viewX, cellRanges);
+						    }).then(() => {
+						        viewX.grid_04.bind("valueChanged", "viewX.divideItemValueChanged");
+						    }).catch((error) => {
+						        korbiztech.alert("MSG_GRID_GET_FAIL");
+						        console.error("An error occurred:", error);
+						    }).finally(() => {
+						        viewX.grid_04.lockGrid(false);
+						    });
+                        } else {
+                            korbiztech.alert("MSG_NOT_SELECTED", "아이템")
+                        }
+                    } else {
+                        korbiztech.alert("MSG_GRID_VIEW_MODE_ONLY");
+                    }
+                } else {
+                    korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+                }
+            } else {
+                korbiztech.alert("MSG_NOT_SELECTED", "중공종");
+            }
+        },
+        // 내역분할 모달 내 추가 ITEM 코드 검색 모달 열기(돋보기 아이콘)
+        searchAddItem: function () {
+            SBUxMethod.openModal("modal_04");
+			viewX.createGrid_05();
+			viewX.grid_05.lockGrid(true);
+		    exios.get("/api/BGA030/selectGubu").then((response) => {
+		        viewX.gubuCodeJson_02 = response.data;
+		        return SBUxMethod.refresh("select_divide_gubu");
+		    }).then(() => {
+		        const gubu = $("#select_divide_gubu").val();
+		        const params = { gubu: gubu };
+		        return exios.get("/api/BGA030/selectAddItem", params);
+		    }).then((response) => {
+		        viewX.gridData_05 = response.data;
+		        viewX.grid_05.setGridData(response.data, false);
+		        viewX.grid_05.refresh({'focus': false});
+		    }).catch((error) => {
+		        korbiztech.alert("MSG_GRID_GET_FAIL");
+		        console.error("An error occurred:", error);
+		    }).finally(() => {
+		        viewX.grid_05.lockGrid(false);
+		    });
+        },
+        // ITEM 코드 검색 모달 내 기술구분 변경
+        divideGubuChange: function () {
+            var gubu =  $("#select_divide_gubu").val();
+            var params = { gubu: gubu };
+
+            viewX.grid_05.lockGrid(true);
+            exios.get("/api/BGA030/selectAddItem", params).then((response) => {
+		        viewX.gridData_05 = response.data;
+		        viewX.grid_05.setGridData(response.data, false);
+		        viewX.grid_05.refresh({'focus': false});
+		        SBUxMethod.set("modal_divideItem_input_itemName", null);
+		    }).catch((error) => {
+		        korbiztech.alert("MSG_GRID_GET_FAIL");
+		        console.error("An error occurred:", error);
+		    }).finally(() => {
+		        viewX.grid_05.lockGrid(false);
+		    });
+        },
+        // ITEM 코드 검색 모달 내 확인 버튼
+        modal_confirmClick: function () {
+            var checkedItems = viewX.gridData_05.filter((item) => item.CHECKBOX === "1");
+            
+            if (checkedItems.length > 0) {
+                SBUxMethod.set("input_itemCode", checkedItems[0].ITEM_CODE);
+                SBUxMethod.set("divideItem_input_itemName", checkedItems[0].ITEM_NAME);
+                SBUxMethod.set("input_size", checkedItems[0].ITEM_SIZE);
+                SBUxMethod.set("input_unit", checkedItems[0].ITEM_UNIT);
+                SBUxMethod.closeModal("modal_04");
+            }
+        },
+        // 내역분할 모달 내 그리드 값 변경
+        divideItemValueChanged: function () {
+            // 기존 ITEM 항목별 금액 계산(수량*단가)
+            var originalDqnty = Number(viewX.grid_04.getCellData(3, 6));
+            var originalSqnty = Number(viewX.grid_04.getCellData(7, 6));
+
+            for (var i = 3; i <= 14; i++) {
+                var multiplier = i <= 6 ? originalDqnty : originalSqnty;
+                var cellData7 = Number(viewX.grid_04.getCellData(i, 7));
+                var result = multiplier * cellData7;
+
+                viewX.grid_04.setCellData(i, 8, result, true);
+            }
+
+            // 추가 ITEM 항목별 금액 계산(수량*단가)
+            var addedDqnty = Number(viewX.grid_04.getCellData(3, 9));
+            var addedSqnty = Number(viewX.grid_04.getCellData(7, 9));
+
+            for (var i = 3; i <= 14; i++) {
+                var multiplier = i <= 6 ? addedDqnty : addedSqnty;
+                var cellData10 = Number(viewX.grid_04.getCellData(i, 10));
+                var result = multiplier * cellData10;
+
+                viewX.grid_04.setCellData(i, 11, result, true);
+            }
+        },
+        // ITEM 코드 검색 모달 내 명칭 검색
+        divideItem_itemNameSearch: function () {
+            var input_itemName = $("#modal_divideItem_input_itemName").val();
+
+            if (input_itemName) {
+                viewX.grid_05.lockGrid(true);
+                exios.get("/api/BGA030/selectGubu").then((response) => {
+			        viewX.gubuCodeJson_02 = response.data;
+			        return $("#select_divide_gubu").val();
+			    }).then((gubu) => {
+			        const params = { gubu: gubu, input_itemName: input_itemName };
+			        return exios.get("/api/BGA030/selectAddItem", params);
+			    }).then((response) => {
+			        viewX.gridData_05 = response.data;
+			        viewX.grid_05.setGridData(response.data, false);
+			        viewX.grid_05.refresh({'focus': false});
+			        SBUxMethod.focus("modal_divideItem_input_itemName");
+			    }).catch((error) => {
+			        korbiztech.alert("MSG_GRID_GET_FAIL");
+			        console.error("An error occurred:", error);
+			    }).finally(() => {
+			        viewX.grid_05.lockGrid(false);
+			    });
+            }
+        },
+        // 내역분할 모달 내 저장 버튼 클릭
+        modal_divideItemClick: function () {
+            // 각 검증 단계의 우선순위?
+            var input_itemCode = $("#input_itemCode").val();
+            if (!input_itemCode) {
+                korbiztech.alert("MSG_NOT_ENTERED", "신규 ITEM 코드");
+                return;
+            }
+
+            var isDuplicate = viewX.gridData_01.some(function(item) {
+                return item.SILD_ITEM === input_itemCode;
+            });
+            console.log(isDuplicate);
+            if (isDuplicate) {
+                korbiztech.alert("MSG_GRID_KEY_DUPLICATE");
+                return;
+            }
+
+            var divideItem_input_itemName = $("#divideItem_input_itemName").val();
+            if (!divideItem_input_itemName) {
+                korbiztech.alert("MSG_NOT_ENTERED", "신규 ITEM 명칭");
+                return;
+            }
+        
+            var addedItemDqnty = Number(viewX.grid_04.getCellData(3, 9));
+            if (addedItemDqnty === 0) {
+                korbiztech.alert("MSG_NOT_ENTERED", "추가 ITEM 도급 수량");
+                return;
+            }
+
+            var addedItemSqnty = Number(viewX.grid_04.getCellData(7, 9));
+            if (addedItemSqnty === 0) {
+                korbiztech.alert("MSG_NOT_ENTERED", "추가 ITEM 실행 수량");
+                return;
+            }
+            
+            var beforeAmt = Number(viewX.grid_04.getCellData(7, 5));
+            var afterOriginalAmt = Number(viewX.grid_04.getCellData(7, 8));
+            var afterAddedAmt = Number(viewX.grid_04.getCellData(7, 11));
+            if (beforeAmt !== afterOriginalAmt + afterAddedAmt) {
+                korbiztech.alert("MSG_NOT_EQUAL", "변경  실행금액의 합", "기존 실행금액의 합");
+                return;
+            }
+
+            viewX.siteCode = $("#select_siteCode").val();
+            viewX.chsu = $("#select_chsu").val();
+            var treeId =SBUxMethod.getTreeStatus("tree_01")[0].id;
+            var gubu = treeId.substring(0, 1);
+            var gogu = treeId.substring(1, 4);
+            var lgoj = treeId.substring(4, 6);
+            var mgoj = treeId.substring(6, 8);
+            
+            var gridId = "grid_04";
+            var dataVar = "gridData_04";
+            var datagridVar = "grid_04";
+            var url = "/api/BGA030/" + gridId + "/gridData";
+
+            var size = $("#input_size").val();
+            var unit = $("#input_unit").val();
+            
+            var sendData = viewX[datagridVar].getUpdateData(false, "all");
+            var addData = {
+                sildSite: viewX.siteCode,
+                sildChsu: viewX.chsu,
+                sildChsu: gubu,
+                sildGogu: gogu,
+                sildLgoj: lgoj,
+                sildMgoj: mgoj,
+                sildItem: input_itemCode,
+                sildName: divideItem_input_itemName,
+                sildSize: size,
+                sildUnit: unit
+            };
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            var checkData = JSON.parse(sendData);
+
+            var performSave = function () {
+                exios.put(url, sendData)
+                	.then((response) => {
+                		korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+						viewX[datagridVar].clearStatus();
+                		viewX.loadGridData(gridId, false);
+                		viewX.grid_04.refresh({'focus': false});
+                	})
+                	.then((response) => {
+						return exios.post('/api/BGA030/insertDivideItems', addData);
+					})
+                	.then((response) => {
+						viewX.selectParentGrid(gubu, gogu, lgoj, mgoj);
+						korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                        SBUxMethod.closeModal("modal_04");
+					})
+					.catch((error) => {
+						korbiztech.alert('MSG_GRID_SAVE_FAIL');
+						console.error('An error occurred:', error);
+					});
+            };
+
+            if (checkData.length > 0) {
+                performSave();
+            } else {
+                korbiztech.alert("MSG_GRID_NO_CHANGES");
+            }
+        },
+        // 초기 값 계산 설정
+        setDefaultValue: function (objGrid, nRow, nCol) {
+            if (!objGrid.getCellData(Number(nRow), Number(nCol))) {
+                return 0;
+            } else {
+                return objGrid.getCellData(Number(nRow), Number(nCol));
+            }
+        },
+        // 실행예산서, 예산내역서 클릭
+        button_print: function () {
+            // 레포트 툴 추후 연동
+            window.print();
+        },
+        // 그리드 생성
+        createGrid_01: function () {
+            var properties_01 = {};
+            properties_01.parentid = "SBGridArea_01";
+            properties_01.id = "viewX.grid_01";
+            properties_01.jsonref = "viewX.gridData_01";
+            properties_01.rowheader = ["update", "seq"];
+            properties_01.frozencols = 5;
+            properties_01.height = "720px";
+            properties_01.mergecellsfixedrows;
+            properties_01.primarykey = ["SILD_ITEM"];
+            properties_01.custompanel = ["template", "exportExcel", "toggleEditMode", "refresh", "add", "delete", "save"];
+            properties_01.total = {
+                type: "grand",
+                position: "top",
+                columns: {
+                    standard: [0],
+                    sum: [9, 12],
+                },
+                grandtotalrow: {
+                    titlecol: 4,
+                    titlevalue: viewX.totalName,
+                    style: "background-color: rgb(146, 178, 197); font-weight: bold; color: rgb(255, 255, 255);",
+                },
+            };
+            properties_01.columns = [
+                { caption: ["", ""], ref: "check", width: "24px", style: "text-align:center", type: "checkbox" },
+                { caption: ["item", "item"], ref: "SILD_ITEM", width: "100px", style: "text-align:center", type: "input", typeinfo: { maxlength: 6 } },
+                { caption: ["명칭", "명칭"], ref: "SILD_NAME", width: "170px", style: "text-align:left", type: "input" },
+                { caption: ["규격", "규격"], ref: "SILD_SIZE", width: "80px", style: "text-align:left", type: "input" },
+                { caption: ["단위", "단위"], ref: "SILD_UNIT", width: "40px", style: "text-align:center", type: "input" },
+                { caption: ["도급", "수량"], ref: "SILD_DQTY", width: "60px", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" } },
+                { caption: ["도급", "단가"], ref: "SILD_DPRI", width: "70px", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" } },
+                { caption: ["도급", "금액"], ref: "SILD_DAMT", width: "70px", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" } },
+                { caption: ["실행", "수량"], ref: "SILD_SQTY", width: "80px", style: "text-align:right",type: "output", calc: viewX.setDefaultValue,format: { type: "number", rule: "0.000" } },
+                { caption: ["실행", "단가"], ref: "SILD_SPRI", width: "90px", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" } },
+                { caption: ["실행", "금액"], ref: "SILD_SAMT", width: "90px", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" } },
+                { caption: ["발주예정\n수량", "발주예정\n수량"], ref: "SILD_PQTY", width: "80px", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" } },
+                { caption: ["1식\n처럼\n사용", "1식\n처럼\n사용"], ref: "SILD_SIK", width: "70px", type: "checkbox", typeinfo: { checkedvalue: "1", uncheckedvalud: null } },
+            ];
+            viewX.grid_01 = korbiztech.grid.createGrid(properties_01);
+            viewX.grid_01.bind("click", "viewX.parentGridClick");
+        },
+        createGrid_02: function () {
+            var properties_02 = {};
+            properties_02.parentid = "SBGridArea_02";
+            properties_02.id = "viewX.grid_02";
+            properties_02.jsonref = "viewX.gridData_02";
+            properties_02.rowheader = ["update"];
+            properties_02.height = "420px"; //362px
+            properties_02.allowcopy = false;
+            properties_02.allowpaste = false;
+            properties_02.pasteaddrow = false;
+            properties_02.updatepastestatus = false;
+            properties_02.custompanel = ["refresh", "save"];
+            properties_02.primarykey = [];
+            properties_02.columns = [
+                { caption: ["구분"], ref: "GUBUN", width: "15%", style: "text-align:center", type: "output" },
+                { caption: ["비목"], ref: "BIMOK", width: "20%", style: "text-align:center", type: "output" },
+                { caption: ["수량 "], ref: "QNTY", width: "20%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" }, merge: false },
+                { caption: ["단가"], ref: "PRI", width: "20%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["금액"], ref: "AMT", width: "25%", style: "text-align:right", type: "output", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: [""], ref: "NUM", type: "output", hidden: true },
+            ];
+            viewX.grid_02 = korbiztech.grid.createGrid(properties_02);
+        },
+        createGrid_03: function () {
+            var properties_03 = {};
+            properties_03.parentid = "SBGridArea_03";
+            properties_03.id = "viewX.grid_03";
+            properties_03.jsonref = "viewX.gridData_03";
+            properties_03.allowcopy = false;
+            properties_03.allowpaste = false;
+            properties_03.pasteaddrow = false;
+            properties_03.updatepastestatus = false;
+            properties_03.rowheader = ["seq"];
+            properties_03.custompanel = ["refresh"];
+            properties_03.primarykey = [];
+            properties_03.columns = [
+                { caption: ["코드"], ref: "ITEM_CODE", width: "15%", style: "text-align:center", type: "output" },
+                { caption: ["명칭"], ref: "ITEM_NAME", width: "35%", style: "text-align:center", type: "input" },
+                { caption: ["규격 "], ref: "ITEM_SIZE", width: "25%", style: "text-align:center", type: "input" },
+                { caption: ["단위"], ref: "ITEM_UNIT", width: "15%", style: "text-align:center", type: "input" },
+                { caption: ["선택"], ref: "CHECKBOX", width: "10%", style: "text-align:center", type: "checkbox", typeinfo: { checkedvalue: "1", uncheckedvalud: null } },
+            ];
+            viewX.grid_03 = korbiztech.grid.createGrid(properties_03);
+        },
+        createGrid_04: function () {
+            var properties_04 = {};
+            properties_04.parentid = "SBGridArea_04";
+            properties_04.id = "viewX.grid_04";
+            properties_04.jsonref = "viewX.gridData_04";
+            properties_04.allowcopy = false;
+            properties_04.allowpaste = false;
+            properties_04.pasteaddrow = false;
+            properties_04.updatepastestatus = false;
+            properties_04.rowheader = ["seq"];
+            properties_04.mergecells = "bycol";
+            properties_04.custompanel = ["refresh"];
+            properties_04.primarykey = [];
+            properties_04.columns = [
+                { caption: ["구분", "구분", "구분"], ref: "GUBUN", width: "6%", style: "text-align:center", type: "input", typeinfo: { maxlength: 6 } },
+                { caption: ["비목", "비목", "비목"], ref: "BIMOK", width: "10%", style: "text-align:center", type: "input" },
+                { caption: ["변경전", "변경전", "수량"], ref: "QNTY", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" }, merge: false },
+                { caption: ["변경전", "변경전", "단가"], ref: "PRI", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["변경전", "변경전", "금액"], ref: "AMT", width: "10%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["변경후", "기존 ITEM", "수량"], ref: "QNTY2", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" }, merge: false },
+                { caption: ["변경후", "기존 ITEM", "단가"], ref: "PRI2", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["변경후", "기존 ITEM", "금액"], ref: "AMT2", width: "10%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["변경후", "추가 ITEM", "수량"], ref: "QNTY3", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "0.000" }, merge: false },
+                { caption: ["변경후", "추가 ITEM", "단가"], ref: "PRI3", width: "9%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+                { caption: ["변경후", "추가 ITEM", "금액"], ref: "AMT3", width: "10%", style: "text-align:right", type: "input", calc: viewX.setDefaultValue, format: { type: "number", rule: "#,###" }, merge: false },
+            ];
+            viewX.grid_04 = korbiztech.grid.createGrid(properties_04);
+        },
+        createGrid_05: function () {
+            var properties_05 = {};
+            properties_05.parentid = "SBGridArea_05";
+            properties_05.id = "viewX.grid_05";
+            properties_05.jsonref = "viewX.gridData_05";
+            properties_05.allowcopy = false;
+            properties_05.allowpaste = false;
+            properties_05.pasteaddrow = false;
+            properties_05.updatepastestatus = false;
+            properties_05.rowheader = ["seq"];
+            properties_05.custompanel = ["refresh"];
+            properties_05.primarykey = [];
+            properties_05.columns = [
+                { caption: ["코드"], ref: "ITEM_CODE", width: "15%", style: "text-align:center", type: "output" },
+                { caption: ["명칭"], ref: "ITEM_NAME", width: "35%", style: "text-align:center", type: "input" },
+                { caption: ["규격 "], ref: "ITEM_SIZE", width: "25%", style: "text-align:center", type: "input" },
+                { caption: ["단위"], ref: "ITEM_UNIT", width: "15%", style: "text-align:center", type: "input" },
+                { caption: ["선택"], ref: "CHECKBOX", width: "10%", style: "text-align:center", type: "radio", typeinfo: { checkedvalue: "1", uncheckedvalud: null } },
+            ];
+            viewX.grid_05 = korbiztech.grid.createGrid(properties_05);
+        },
+        // 현장명 조회
+        selectSite: function () {
+            exios.get('/api/BGA030/selectSite').then((response) => {
+		        viewX.siteCodeJson = response.data;
+		        return SBUxMethod.refresh("select_siteCode");
+		    }).then(() => {
+		        viewX.selectChsu();
+		    }).catch((error) => {
+		        korbiztech.alert("MSG_GRID_GET_FAIL");
+		        console.error("An error occurred:", error);
+		    });
+        },
+        // 차수 조회
+        selectChsu: function () {
+            viewX.siteCode = $("#select_siteCode").val();
+            const params = { siteCode: viewX.siteCode };
+
+			exios.get("/api/BGA030/selectChsu", params)
+				.then((response) => {
+					viewX.chsuJson = response.data;
+					
+					response.data.forEach((data) => {
+						const chsu = data.CHSU;
+						const comp = data.COMP;
+						
+						if (comp === "1") {
+							// 확정인 경우. 모든 데이터의 추가/수정/삭제를 할 수 없게 해야 함
+							SBUxMethod.show("label_comp");
+						} else {
+							SBUxMethod.show("button_addGJ");
+							SBUxMethod.show("button_addItem");
+							SBUxMethod.show("button_divideItem");
+						}
+					});
+					
+					SBUxMethod.refresh("select_chsu");
+					viewX.selectTree();
+				})
+				.catch((error) => {
+					korbiztech.alert("MSG_GRID_GET_FAIL");
+					console.error("An error occurred:", error);
+				});
+        },
+        // 트리 조회
+        selectTree: function () {
+            viewX.siteCode = $("#select_siteCode").val();
+            viewX.chsu = $("#select_chsu").val();
+            const params = { siteCode: viewX.siteCode, chsu: viewX.chsu };
+            
+            exios.get("/api/BGA030/selectFourTree", params)
+			    .then((response) => {
+			        viewX.treeData_01 = response.data;
+			        SBUxMethod.refresh("tree_01");
+			    })
+			    .catch((error) => {
+			        korbiztech.alert("MSG_GRID_GET_FAIL");
+			        console.error("An error occurred:", error);
+			    });
+        },
+        // 메인 그리드 조회
+        selectParentGrid: function (gubu, gogu, lgoj, mgoj) {
+            viewX.siteCode = $("#select_siteCode").val();
+            viewX.chsu = $("#select_chsu").val();
+            var params = {
+                siteCode: viewX.siteCode,
+                chsu: viewX.chsu,
+                gubu: gubu,
+                gogu: gogu,
+                lgoj: lgoj,
+                mgoj: mgoj,
+            };
+            viewX.selectChildGrid(params);
+            exios.get("/api/BGA030/selectParentGrid", params)
+			    .then((response) => {
+			        viewX.orgGridData_01 = response.data;
+			        viewX.gridData_01 = response.data;
+			        viewX.grid_01.setGridData(viewX.gridData_01, false);
+			        viewX.grid_01.refresh({'focus': false});
+			        korbiztech.gridAction.disablePrimaryKeyCells("grid_01");
+			    })
+			    .catch((error) => {
+			        korbiztech.alert("MSG_GRID_GET_FAIL");
+			        console.error("An error occurred:", error);
+			    });
+        },
+        // 서브 그리드 조회
+        selectChildGrid: function (params) {
+			exios.get("/api/BGA030/selectChildGrid", params)
+				.then((response) => {
+					viewX.gridData_02 = response.data;
+					viewX.grid_02.setGridData(viewX.gridData_02, false);
+					//Here - Excel paste 이슈있는 부분
+					viewX.grid_02.refresh({'focus': false});
+					
+					const setCellProperties = (view, stylesAndDisabled) => {
+						stylesAndDisabled.forEach((props) => {
+							const [startRow, startCol, endRow, endCol] = props.range;
+							if (props.disabled) {
+								viewX.grid_02.setCellDisabled(startRow, startCol, endRow, endCol, true);
+							}
+							viewX.grid_02.setCellStyles(startRow, startCol, endRow, endCol, "background : #EFEFEF;");
+						});
+					};
+					
+					const cellProps = [
+						{ range: [1, 1, 12, 2], disabled: false },
+						{ range: [1, 4, 1, 4], disabled: true },
+						{ range: [5, 4, 5, 4], disabled: true },
+						{ range: [2, 3, 4, 3], disabled: true },
+						{ range: [6, 3, 12, 3], disabled: true },
+						{ range: [1, 5, 12, 5], disabled: false }
+					];
+					setCellProperties(viewX, cellProps);
+					viewX.grid_02.bind("valuechanged", "viewX.childGridValueChanged");
+            	})
+				.catch((error) => {
+					korbiztech.alert("MSG_GRID_GET_FAIL");
+					console.error("An error occurred:", error);
+				});
+        }
+    };
+
+    $(function() {
+        SBUxMethod.hide("label_comp");
+        SBUxMethod.hide("button_addGJ");
+        SBUxMethod.hide("button_addItem");
+        SBUxMethod.hide("button_divideItem");
+        viewX.selectSite();
+        viewX.createGrid_01();
+        viewX.createGrid_02();
+    });
+</script>
+<style>
+    
+</style>
+<body>
+    <div class="page-5113">
+        <div class="menuPath-wrap">
+            <h3>실행내역편성</h3><!-- DNS: 제목 추가 -->
+            <div class="menuPath-title"></div>
+        </div>
+        <div class="table-container sortbox">
+            <div class="sortbox_inner">
+                <ul class="sortitem">
+                    <li>
+                        <!-- <span id="text">현장명</span> DNS: span >> label로 수정 -->
+                        <label for="select_siteCode" id="text">현장명</label><!-- DNS: ':' 삭제' -->
+                        <sbux-select id="select_siteCode" name="select_siteCode" uitype="single" auto-size="true"
+                            jsondata-ref="viewX.siteCodeJson"
+                            jsondata-text="SITE_NAME"
+                            jsondata-value="SITE_CODE"
+                            onchange="viewX.siteChange()">
+                        </sbux-select>
+                    </li>
+                    <li>
+                        <span id="text">차수</span><!-- ':' 삭제' -->
+                        <sbux-select id="select_chsu" name="select_chsu" uitype="single" auto-size="true"
+                            jsondata-ref="viewX.chsuJson"
+                            jsondata-text="CHASU"
+                            jsondata-value="CHSU"
+                            onchange="viewX.selectTree()">
+                        </sbux-select>
+                        <sbux-label id="label_comp" name="label_comp" uitype="normal" text="확정" class="hl_red ml5">
+                        </sbux-label>
+                    </li>
+                    <li>
+                        <span id="text">명칭</span><!-- ':' 삭제' -->
+                        <sbux-input id="input_itemName" name="input_itemName" uitype="text"
+                            onkeyenter="viewX.itemNameSearch(input_itemName)">
+                        </sbux-input>
+                    </li>
+                </ul>
+                <!-- DNS: 검색-버튼영역 -->
+                <div class="sort_btn alg_r">
+                    <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run" onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+                    <div class="btn_line"><!-- DNS : 버튼영역 내 줄바꾸는 박스 .btn_line -->
+                        <sbux-button id="button_addGJ" name="button_addGJ" uitype="modal" text="공종추가" class="btn_s_edit"
+                            target-id="modal_01"
+                            onClick="viewX.button_addGJClick()">
+                        </sbux-button>
+                        <sbux-modal id="modal_01" name="modal_01" uitype="large" is-draggable="true"
+                            header-title="공종추가" header-close-glyphs="glyphicon-remove"
+                            body-html-id="modal_body_01" footer-html-id="modal_01_footer">
+                        </sbux-modal>
+                        <sbux-button id="button_addItem" name="button_addItem" uitype="normal" text="내역추가" class="btn_s_edit"
+                            onClick="viewX.button_addItemClick()">
+                        </sbux-button>
+                        <sbux-modal id="modal_02" name="modal_02" uitype="large" is-draggable="true"
+                            header-title="내역추가" header-close-glyphs="glyphicon-remove"
+                            body-html-id="modal_02_body" footer-html-id="modal_02_footer">
+                        </sbux-modal>
+                        <sbux-button id="button_divideItem" name="button_divideItem" uitype="normal" text="내역분할" class="btn_s_edit"
+                            onclick="viewX.button_divideItemClick()">
+                        </sbux-button>
+                        <sbux-modal id="modal_03" name="modal_03" uitype="large" is-draggable="true"
+                            header-title="내역분할" header-close-glyphs="glyphicon-remove"
+                            body-html-id="modal_03_body" footer-html-id="modal_03_footer">
+                        </sbux-modal>
+                        <sbux-modal id="modal_04" name="modal_04" uitype="large" is-draggable="true"
+                            header-title="ITEM 검색" header-close-glyphs="glyphicon-remove"
+                            body-html-id="modal_04_body" footer-html-id="modal_04_footer">
+                        </sbux-modal>
+                    </div>
+                    <div class="btn_line">
+                        <!-- DNS: .btn_s_print : 부수적인 버튼 중 출력기능 버튼 클래스 -->
+                        <sbux-button id="button_print_01" name="button_print_01" uitype="normal" text="실행예산서 출력" onclick="viewX.button_print()" class="btn_s_print"></sbux-button><!-- button-color="blue" -->
+                        <sbux-button id="button_print_02" name="button_print_02" uitype="normal" text="예산내역서 출력" onclick="viewX.button_print()" class="btn_s_print"></sbux-button><!-- button-color="blue" -->
+                    </div>
+                </div>
+                <!-- //DNS: 검색-버튼영역 -->
+            </div>
+        </div>
+        <div class="flex-container d_flex col-3">
+            <div class="tree-container flex-15 pt10 pb10">
+                <sbux-tree id="tree_01" name="tree_01" uitype="normal" empty-message="데이터가 존재하지 않습니다."
+                    jsondata-ref="viewX.treeData_01"
+                    onclick="viewX.treeClick()" class="alg_c">
+                </sbux-tree>
+            </div>
+            <div class="grid-container d_flex flex-85">
+                <div class="SBGridArea_01">
+                    <div id="SBGridArea_01" class="mb0"></div>
+                </div>
+                <div class="SBGridArea_02 mr0">
+                    <div id="SBGridArea_02"></div>
+                    <div>
+                        <sbux-fileupload id="multiExt" name="multiExt" uitype="multipleExt" vertical-scroll-height="193px"
+                            jsondata-ref="viewX.uploadFilesJson"  max-file-size="20971520" drop-zone="true"
+                            button-order="add^delete^custom" button-custom-title="업로드"
+                            button-custom-icon-glyphs="glyphicon glyphicon-upload"
+                            button-custom-click="viewX.validateAndUploadFile()" class="w_auto">
+                        </sbux-fileupload>
+                        <script>
+                            viewX.validateAndUploadFile = function() {
+                                this.treeId = SBUxMethod.getTreeStatus('tree_01');
+                                if (typeof this.treeId === 'undefined') {
+                                    korbiztech.alert('MSG_NOT_SELECTED', '기술구분');
+                                    return;
+                                }
+                                this.uploadFile(this.treeId[0].id);
+                            };
+                            viewX.uploadFile = function(treeId) {
+                                this.fileData = SBUxMethod.getFileUpdateData('multiExt');
+                                if (!korbiztech.file.validateFileData(this.fileData)) return;
+                                this.fileUrl = '/api/BGA030/files';
+                                this.filesData = new FormData();
+                                var { filteredFiles, errorFiles } = korbiztech.file.filterFiles(this.fileData);
+                                this.paramsData = [];
+                                filteredFiles.forEach((file, index) => {
+                                    this.paramsData.push({
+                                        name: file.name,
+                                        ext: file.ext,
+                                        type: file.type,
+                                        size: file.size,
+                                        status: file.status,
+                                        extraParams: {
+                                            siteCode: $("#select_siteCode").val(),
+                                            chsu: $("#select_chsu").val(),
+                                            gubu: treeId.substring(0, 1)
+                                        }
+                                    });
+                                    this.filesData.append('files', file);
+                                });
+                                this.filesData.append('params', JSON.stringify(this.paramsData));
+                                korbiztech.file.uploadFiles(this.fileUrl, this.filesData).then(function(response) {
+                                    viewX.uploadFilesJson = filteredFiles;
+                                    if (errorFiles.length > 0) {
+                                        korbiztech.alert('MSG_FILE_PARTIAL_UPLOAD_SUCCESS', errorFiles.length, filteredFiles.length);
+                                    } else {
+                                        korbiztech.alert('MSG_FILE_UPLOAD_SUCCESS');
+                                    }
+                                }).catch(function(error) {
+                                    korbiztech.alert('MSG_FILE_UPLOAD_FAIL');
+                                    console.log(error);
+                                });
+                            };
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BGA031.html -->
+        <div th:replace="~{CM/BG/BGA031 :: modal_01}"></div>
+        <!-- BGA032.html -->
+        <div th:replace="~{CM/BG/BGA032 :: modal_02}"></div>
+        <!-- BGA033.html -->
+        <div th:replace="~{CM/BG/BGA033 :: modal_03}"></div>
+        <!-- BGA034.html -->
+        <div th:replace="~{CM/BG/BGA034 :: modal_04}"></div>
+    </div>
+</body>

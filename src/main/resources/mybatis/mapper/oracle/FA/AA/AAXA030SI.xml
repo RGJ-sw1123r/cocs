@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.FA.AA.dao.AAXA030SI_DAO">
+    <select id="selectList" parameterType="HashMap" resultType="HashMap">
+    select 
+AA.AUNTT_KB AUNTT_KB,                      
+AA.buseo_cd BUSEO_CD,                      
+AA.buseo_nm BUSEO_NM,                       
+AA.GIPYO_KB GIPYO_KB,                       
+AA.BUSEO_LV BUSEO_LV,                        
+AA.BUSEO_YA BUSEO_YA,                       
+AA.prjct_cd PRJCT_CD,                           
+PJ.PRJCT_YA PRJCT_NM,               
+AA.txsae_no TXSAE_NO,                        
+TX.saupj_nm TXSAE_NM,             
+AA.plnct_cd PLNCT_CD,                          
+YT.buseo_YA PLNCT_NM,                  
+AA.chool_cd CHOOL_CD,                           
+CN.buseo_YA CHOOL_NM,                  
+AA.COSTT_KB COSTT_KB,                           
+AA.saebg_kb SAEBG_KB,                          
+AA.wonsi_cd WONSI_CD,                            
+NE.buseo_YA WONSI_NM,                   
+AA.sayng_st SAYNG_ST,                             
+AA.sayng_ed SAYNG_ED,                             
+AA.PLNCT_KB PLNCT_KB,                             
+AA.GONSA_KB GONSA_KB,                             
+AA.buseo_ca BUSEO_CA,                             
+AA.JUNDO_KB JUNDO_KB,                             
+pj.costt_cd COSTT_CD,
+ca.accnt_ya COSTT_NM,                      
+pj.COSTT_YN COSTT_YN,          
+pj.VATTT_KB VATTT_KB,
+pj.SAYN3_ED SAYN3_ED,
+pj.SAYN2_ED SAYN2_ED,
+AA.ADDRE_NY ADDRE_NY,                           
+AA.KWANH_CD KWANH_CD,                           
+AA.HOUSE_KB HOUSE_KB,                            
+GI.GITAA_NM KWANH_NM,                   
+AA.CONTR_DT CONTR_DT,                            
+AA.GONBU_KB GONBU_KB,                              
+NVL(AA.SAEOB_KB,0) SAEOB_KB,                  
+H.AUNTT_NM AUNTT_NM,                             
+aa.GONGG_CD GONGG_CD,                           
+i.SILD_NAME GONGG_NM                    
+From
+AXTB0300 AA 
+left join AXTB0400 PJ on AA.AUNTT_KB = PJ.AUNTT_KB AND AA.prjct_cd = PJ.prjct_cd 
+left join AXTB0900 TX on AA.AUNTT_KB = TX.AUNTT_KB AND AA.txsae_no = TX.txsae_no  
+left join AXTB0300 YT on AA.AUNTT_KB = YT.AUNTT_KB AND AA.plnct_cd = YT.buseo_cd  
+left join AXTB0300 CN on AA.AUNTT_KB = CN.AUNTT_KB AND AA.chool_cd = CN.buseo_cd  
+left join AXTB0300 NE on AA.AUNTT_KB = NE.AUNTT_KB AND AA.wonsi_cd = NE.buseo_cd  
+left join axtb0200 ca on pj.costt_cd = ca.accnt_cd
+left join AXTB1000 GI on GI.ITEMM_KB = 'A43'
+                      AND AA.KWANH_CD = GI.GITAA_CD
+left join AXTB8100 H ON AA.AUNTT_KB= H.AUNTT_KB
+LEFT JOIN (SELECT SILD_OFFICE, SILD_SITE, SILD_NAME, SILD_GUBU || SILD_GOGU || SILD_LGOJ || SILD_MGOJ || SILD_ITEM AS SILD_ITEM
+            From VBG_SILD
+            ) I ON AA.AUNTT_KB = I.SILD_OFFICE
+            AND AA.GONGG_CD = I.SILD_ITEM
+            AND AA.BUSEO_CD = I.SILD_SITE
+<where>
+    <if test="dued==0">          
+        AND AA.AUNTT_KB = #{AUNTT_KB} 
+        AND   AA.buseo_cd LIKE #{code} ||'%'
+    </if>    
+    <if test="dued==1">          
+        AND AA.AUNTT_KB = #{AUNTT_KB} 
+        AND   AA.buseo_cd LIKE #{code} ||'%'
+        AND TO_DATE(AA.SAYNG_ED, 'YYYY-MM-DD') <![CDATA[> ]]> SYSDATE
+        OR  AA.SAYNG_ED IS NULL
+    </if>
+    </where>           
+    </select>
+
+    <select id="deptList" parameterType="HashMap" resultType="HashMap">
+            SELECT AA.CHDOG_DT CHDOG_DT,
+                   AA.IBUSE_CD IBUSE_CD,
+                   CC.BUSEO_NM BUSEO_NM
+            FROM   AXTB0310 AA
+            LEFT JOIN AXTB0300 CC ON AA.IBUSE_CD = CC.BUSEO_CD
+            WHERE  AA.BUSEO_CD = #{code}      
+    </select>
+
+    <select id="empList" parameterType="HashMap" resultType="HashMap">
+               select 
+        AA.buseo_cd BUSEO_CD,
+        AA.JUNKL_SQ JUNKL_SQ,
+        AA.confi_jw CONFI_JW,
+       BB.GITAA_NM CONFI_NM,
+        AA.confi_jn CONFI_JN,
+        CC.userS_nm confi_n1
+        FROM AXTB0320 AA
+        left join AXTB1000 BB on BB.ITEMM_KB= 'X11' and AA.confi_jw = BB.gitaa_cd
+        left join SYTB0100 CC on  CC.USERS_ID  = AA.confi_jn
+            WHERE  AA.BUSEO_CD = #{code}      
+    </select>
+
+    <select id="taxList" parameterType="HashMap" resultType="HashMap">
+        SELECT TXSAE_NO,
+               SAUPJ_NM
+        FROM   AXTB0900
+    </select>           
+
+    <select id="costList" parameterType="HashMap" resultType="HashMap">
+        SELECT ACCNT_CD,
+               ACCNT_YA
+        FROM   AXTB0200     
+    </select>
+
+    <select id="gongList" parameterType="HashMap" resultType="HashMap">
+        SELECT SILD_NAME, 
+               SILD_GUBU || SILD_GOGU || SILD_LGOJ || SILD_MGOJ || SILD_ITEM AS SILD_ITEM
+        FROM VBG_SILD 
+    </select>
+
+    <select id="govList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM 
+        FROM AXTB1000 
+        WHERE ITEMM_KB = 'A43'
+    </select>  
+
+    <select id="gongsaList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM,
+               '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NMS
+        FROM   AXTB1000
+        WHERE  ITEMM_KB = 'A28'    
+        AND    GITAA_CD <![CDATA[<>]]> '***'    
+    </select>
+
+    <select id="bonsaList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM,
+               '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NMS
+        FROM   AXTB1000
+        WHERE  ITEMM_KB = 'A04'  
+        AND    GITAA_CD <![CDATA[<>]]> '***'      
+    </select>
+
+    <select id="taxpayList" parameterType="HashMap" resultType="HashMap">
+        SELECT GITAA_CD,
+               GITAA_NM,
+               '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NMS
+        FROM   AXTB1000
+        WHERE  ITEMM_KB = 'A10' 
+        AND    GITAA_CD <![CDATA[<>]]> '***'       
+    </select>
+
+    <select id="siteList" parameterType="HashMap" resultType="HashMap">
+        SELECT DTL5_GBN,
+               DTL5_ACCGBN,
+               DTL5_NAME,
+               DTL5_SPEC,
+               DTL5_AREA,
+               DTL5_USE,
+               DTL5_UNIT,
+               DTL5_QTY,
+               DTL5_PRI,
+               DTL5_AMT,
+               DTL5_JDATE,
+               DTL5_BDATE,
+               DTL5_EDATE1,
+               DTL5_EDATE2,
+               DTL5_JUNSE,
+               DTL5_RIGHT,
+               DTL5_IMDEIN,
+               DTL5_BIGOO,
+               DTL5_SADDR
+        FROM   AXTB0430
+        WHERE  DTL5_SITE = #{code}       
+    </select>
+
+    <select id="subcontList" parameterType="HashMap" resultType="HashMap">
+        SELECT A.SAEOB_NO SAEOB_NO,
+               B.DEALR_NM DEALR_NM,
+               A.JIBUN_RT JIBUN_RT
+        FROM   AXTB0330 A,
+               AXTB1100 B
+        WHERE  A.BUSEO_CD = #{code}
+        AND    A.SAEOB_NO = B.SAEOB_NO                
+    </select>
+
+    <update id="saveGrid01UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0300 SET
+               BUSEO_NM = #{item.BUSEO_NM}, 
+               GIPYO_KB = #{item.GIPYO_KB}, 
+               BUSEO_LV = #{item.BUSEO_LV}, 
+               BUSEO_YA = #{item.BUSEO_YA}, 
+               PRJCT_CD = #{item.PRJCT_CD}, 
+               TXSAE_NO = #{item.TXSAE_NO},
+               PLNCT_CD = #{item.PLNCT_CD},
+               CHOOL_CD = #{item.CHOOL_CD},
+               COSTT_KB = #{item.COSTT_KB},
+               SAEBG_KB = #{item.SAEBG_KB},
+               WONSI_CD = #{item.WONSI_CD},
+               SAYNG_ST = #{item.SAYNG_ST},
+               SAYNG_ED = #{item.SAYNG_ED},
+               PLNCT_KB = #{item.PLNCT_KB},
+               GONSA_KB = #{item.GONSA_KB},
+               BUSEO_CA = #{item.BUSEO_CA},
+               JUNDO_KB = #{item.JUNDO_KB},
+               ADDRE_NY = #{item.ADDRE_NY},
+               KWANH_CD = #{item.KWANH_CD},
+               HOUSE_KB = #{item.HOUSE_KB},
+               CONTR_DT = #{item.CONTR_DT},
+               GONBU_KB = #{item.GONBU_KB},
+               GONGG_CD = #{item.GONGG_CD}
+        WHERE  BUSEO_CD = #{item.BUSEO_CD}  
+        AND    AUNTT_KB = #{item.AUNTT_KB}    
+        </foreach>
+    </update>
+
+    <update id="saveGrid01AttachUpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0400 SET
+               PRJCT_NM = #{item.BUSEO_NM},
+               PRJCT_YA = #{item.BUSEO_YA},
+               PRJCT_LV = #{item.BUSEO_LV},
+               COSTT_CD = #{item.COSTT_CD},
+               COSTT_YN = #{item.COSTT_YN},
+               VATTT_KB = #{item.VATTT_KB},
+               SAYN3_ED = #{item.SAYN3_ED},
+               SAYN2_ED = #{item.SAYN2_ED},
+               LACHG_DT = sysdate
+        WHERE  PRJCT_CD = #{item.BUSEO_CD}
+        AND    AUNTT_KB = #{item.AUNTT_KB}        
+        </foreach>
+    </update>    
+
+    <update id="saveGrid01Attach_02UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0320 SET
+               CONFI_JN = 'admin'
+        WHERE  AUNTT_KB = #{item.AUNTT_KB}   
+        AND    BUSEO_CD = #{item.BUSEO_CD}  
+        </foreach>
+    </update>   
+
+    <update id="saveGrid01Attach_03UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0310 SET
+               CHDOG_DT = sysdate
+        WHERE  AUNTT_KB = #{item.AUNTT_KB}   
+        AND    BUSEO_CD = #{item.BUSEO_CD}  
+        </foreach>
+    </update>
+
+    <insert id="saveGrid01InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0300
+        (BUSEO_NM, GIPYO_KB, BUSEO_LV, BUSEO_YA, PRJCT_CD, TXSAE_NO,
+         PLNCT_CD, CHOOL_CD, COSTT_KB, SAEBG_KB ,WONSI_CD, SAYNG_ST,
+         SAYNG_ED, PLNCT_KB, GONSA_KB, BUSEO_CA, JUNDO_KB, ADDRE_NY,
+         KWANH_CD, HOUSE_KB, CONTR_DT, GONBU_KB, GONGG_CD, BUSEO_CD,
+         AUNTT_KB)
+        VALUES
+        (
+                #{item.BUSEO_NM},
+                #{item.GIPYO_KB},
+                #{item.BUSEO_LV},
+                #{item.BUSEO_YA},
+                #{item.PRJCT_CD},
+                #{item.TXSAE_NO},
+                #{item.PLNCT_CD},
+                #{item.CHOOL_CD},
+                #{item.COSTT_KB},
+                #{item.SAEBG_KB},
+                #{item.WONSI_CD},
+                #{item.SAYNG_ST},
+                #{item.SAYNG_ED},
+                #{item.PLNCT_KB},
+                #{item.GONSA_KB},
+                #{item.BUSEO_CA},
+                #{item.JUNDO_KB},
+                #{item.ADDRE_NY},
+                #{item.KWANH_CD},
+                #{item.HOUSE_KB},
+                #{item.CONTR_DT},
+                #{item.GONBU_KB},
+                #{item.GONGG_CD},
+                #{item.BUSEO_CD},
+                #{item.AUNTT_KB}
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <insert id="saveGrid01AttachInsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0400
+        (PRJCT_NM, PRJCT_YA, PRJCT_LV, COSTT_CD, COSTT_YN,
+         VATTT_KB, SAYN3_ED, SAYN2_ED, LACHG_DT, PRJCT_CD,
+         AUNTT_KB)
+        VALUES
+        (
+            #{item.BUSEO_NM},
+            #{item.BUSEO_YA},
+            #{item.BUSEO_LV},
+            #{item.COSTT_CD},
+            #{item.COSTT_YN},
+            #{item.VATTT_KB},
+            #{item.SAYN3_ED},
+            #{item.SAYN2_ED},
+            sysdate,
+            #{item.BUSEO_CD},
+            #{item.AUNTT_KB}
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <insert id="saveGrid01Attach_02InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0320
+        (CONFI_JN,AUNTT_KB, BUSEO_CD, JUNKL_SQ)
+        VALUES
+        (
+            'admin',
+            #{item.BUSEO_CD},
+            #{item.AUNTT_KB},
+            MAX(NVL(JUNKL_SQ,0))+1
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <insert id="saveGrid01Attach_03InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0310
+        (CHDOG_DT, AUNTT_KB, BUSEO_CD)
+        VALUES
+        (
+            sysdate,
+            #{item.AUNTT_KB},
+            #{item.BUSEO_CD}
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <delete id="saveGrid01DeleteData">
+        DELETE FROM AXTB0300
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (BUSEO_CD = #{item.BUSEO_CD}  
+         AND AUNTT_KB = #{item.AUNTT_KB})
+        </foreach>
+        </where>
+    </delete>
+
+    <delete id="saveGrid01AttachDeleteData">
+        DELETE FROM AXTB0400
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (PRJCT_CD = #{item.BUSEO_CD}  
+         AND AUNTT_KB = #{item.AUNTT_KB})
+        </foreach>
+        </where>
+    </delete>
+
+    <update id="saveGrid04UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0430 SET
+               DTL5_GBN = #{item.DTL5_GBN},
+               DTL5_ACCGBN = #{item.DTL5_ACCGBN},
+               DTL5_NAME = #{item.DTL5_NAME},
+               DTL5_SPEC = #{item.DTL5_SPEC},
+               DTL5_AREA = #{item.DTL5_AREA},
+               DTL5_USE = #{item.DTL5_USE},
+               DTL5_UNIT = #{item.DTL5_UNIT},
+               DTL5_QTY = #{item.DTL5_QTY},
+               DTL5_PRI = #{item.DTL5_PRI},
+               DTL5_AMT = #{item.DTL5_AMT},
+               DTL5_JDATE = #{item.DTL5_JDATE},
+               DTL5_BDATE = #{item.DTL5_BDATE},
+               DTL5_EDATE1 = #{item.DTL5_EDATE1},
+               DTL5_EDATE2 = #{item.DTL5_EDATE2},
+               DTL5_JUNSE = #{item.DTL5_JUNSE},
+               DTL5_RIGHT = #{item.DTL5_RIGHT},
+               DTL5_IMDEIN = #{item.DTL5_IMDEIN},
+               DTL5_BIGOO = #{item.DTL5_BIGOO},
+               DTL5_SADDR = #{item.DTL5_SADDR}
+        WHERE  DTL5_SITE = #{item.BUSEO_CD}    
+        </foreach>
+    </update>
+    
+    <insert id="saveGrid04InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0430
+        (DTL5_GBN, DTL5_ACCGBN, DTL5_NAME, DTL5_SPEC, DTL5_AREA, DTL5_USE, 
+         DTL5_UNIT, DTL5_QTY, DTL5_PRI, DTL5_AMT, DTL5_JDATE, DTL5_BDATE, 
+         DTL5_EDATE1, DTL5_EDATE2, DTL5_JUNSE, DTL5_RIGHT, DTL5_IMDEIN,
+         DTL5_BIGOO, DTL5_SADDR, DTL5_SITE, DTL5_OFFICE, DTL5_SEQ)
+        VALUES
+        (
+                #{item.DTL5_GBN},
+                #{item.DTL5_ACCGBN},
+                #{item.DTL5_NAME},
+                #{item.DTL5_SPEC},
+                #{item.DTL5_AREA},
+                #{item.DTL5_USE},
+                #{item.DTL5_UNIT},
+                #{item.DTL5_QTY},
+                #{item.DTL5_PRI},
+                #{item.DTL5_AMT},
+                #{item.DTL5_JDATE},
+                #{item.DTL5_BDATE},
+                #{item.DTL5_EDATE1},
+                #{item.DTL5_EDATE2},
+                #{item.DTL5_JUNSE},
+                #{item.DTL5_RIGHT},
+                #{item.DTL5_IMDEIN},
+                #{item.DTL5_BIGOO},
+                #{item.DTL5_SADDR},
+                #{item.BUSEO_CD},
+                #{item.AUNTT_KB},
+                (SELECT COALESCE(MAX(DTL5_SEQ), 0) + 1 FROM AXTB0430)      
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <delete id="saveGrid04DeleteData">
+        DELETE FROM AXTB0430
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (DTL5_SITE = #{item.BUSEO_CD}
+        AND DTL5_ACCGBN = #{item.DTL5_ACCGBN})
+        </foreach>
+        </where>
+    </delete>
+
+    <update id="saveGrid05UpdateData">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE AXTB0330 SET
+               SAEOB_NO = #{item.SAEOB_NO},
+               JIBUN_RT = #{item.JIBUN_RT}
+        WHERE  AUNTT_KB = #{item.AUNTT_KB}   
+        AND    BUSEO_CD = #{item.BUSEO_CD}  
+        </foreach>
+    </update>
+
+    <insert id="saveGrid05InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+        INTO AXTB0330
+        (SAEOB_NO, JIBUN_RT, AUNTT_KB, BUSEO_CD)
+        VALUES
+        (
+                #{item.SAEOB_NO},
+                #{item.JIBUN_RT},
+                #{item.AUNTT_KB},
+                #{item.BUSEO_CD}   
+        )
+        </foreach>
+        SELECT 1 FROM DUAL
+    </insert>
+
+    <delete id="saveGrid05DeleteData">
+        DELETE FROM AXTB0330
+        <where>
+	    <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+        (SAEOB_NO = #{item.SAEOB_NO}
+         AND AUNTT_KB = #{item.AUNTT_KB})
+        </foreach>
+        </where>
+    </delete>
+
+</mapper>

@@ -1,0 +1,45 @@
+# Server Port
+server:
+  port: 8088
+  tomcat:
+    additional-tld-skip-patterns: "*.jar"
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  datasource:
+    url: jdbc:p6spy:oracle:thin:@192.168.0.99:1522:XE
+    username: CWCON
+    password: 1234
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    check-template-location: true
+    suffix: .html
+    mode: HTML
+    cache: true
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+      
+# mybatis
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+    jdbc-type-for-null: varchar
+  mapper-locations:
+  - /mybatis/mapper/oracle/**/**.xml
+  
+logging:
+  level:
+    '[org.springframework.web]': ERROR
+    '[p6spy]': ERROR
+    '[com.korbiztech.product.cocs]': ERROR
+    

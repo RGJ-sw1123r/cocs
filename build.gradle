@@ -1,0 +1,60 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.0.11'
+	id 'io.spring.dependency-management' version '1.1.0'
+}
+
+def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('yyyyMMdd_HHmmss')
+    return formattedDate
+}
+
+bootJar {
+    archiveFileName = "COCS-${getDate()}.jar"
+}
+
+group = 'com.korbiztech.product'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.2'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:3.1.4'
+	implementation 'com.google.code.gson:gson:2.10.1'
+	implementation 'com.google.guava:guava:32.1.2-jre'
+	implementation 'p6spy:p6spy:3.9.1'
+	implementation 'com.oracle.database.jdbc:ojdbc8:23.3.0.23.09'
+	implementation group: 'com.oracle.ojdbc', name: 'orai18n', version: '19.3.0.0'
+	implementation files('libs/SBLoadExcel_1.23.jar')
+	implementation files('libs/json-simple-1.1.1.jar')
+	implementation files('libs/poi-3.11-20141221.jar')
+	implementation files('libs/poi-ooxml-3.11-20141221.jar')
+	implementation files('libs/poi-ooxml-schemas-3.11-20141221.jar')
+	implementation files('libs/xercesImpl.jar')
+	implementation files('libs/xmlbeans-2.6.0.jar')
+	implementation 'commons-io:commons-io:2.13.0'
+	implementation 'org.apache.commons:commons-csv:1.10.0'
+	annotationProcessor 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.springframework.boot:spring-boot-starter-tomcat'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

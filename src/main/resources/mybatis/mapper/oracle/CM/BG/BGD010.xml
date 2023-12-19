@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGD010_DAO">
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_EQ = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_EQ = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+
+    <select id="selectDate" resultType="HashMap">
+        SELECT YYYYMM, TO_CHAR(TO_DATE(YYYYMM,'YYYYMM'),'YYYY-MM') YM, TODAYROWNUM
+        FROM YYYYMM
+        , (SELECT MAX(DECODE(YYYYMM, YM, ROWNUM)) TODAYROWNUM
+        FROM YYYYMM, (SELECT TO_CHAR(SYSDATE, 'YYYYMM') YM FROM DUAL)
+        WHERE YYYYMM BETWEEN '200001' AND '202312')
+        WHERE YYYYMM BETWEEN '200001' AND '202312'
+        ORDER BY YYYYMM
+    </select>
+
+    <select id="selectParentGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT SADD_OFFICE, SADD_SITE, SADD_SEQ, SADD_YYMM, SADD_NAME, SADD_OK
+        , SADD_UPYN, SADD_DATE, SADD_CODE, SADD_CHSU || '차' SADD_CHSU
+        <!-- , DECODE(APP_STAT, NULL, '상신전' , #{HSCON.COM.CONSTANT.APP_DEL + "','상신전',' #{HSCON.COM.CONSTANT.APP_DEC+"','결재완료','"+HSCON.COM.CONSTANT.APP_END+"','결재완료','"+HSCON.COM.CONSTANT.APP_TRAN}','결재완료','"+HSCON.COM.CONSTANT.APP_BACK},'반려','상신') APRV_STAT -->
+        <!-- , CASE WHEN NVL(APP_STAT,' ') = ' ' OR NVL(APP_STAT,' ') = #{HSCON.COM.CONSTANT.APP_BACK} OR NVL(APP_STAT,' ') = #{HSCON.COM.CONSTANT.APP_DEL} THEN 'F' ELSE 'T' END APP_YN, APP_REPORTER_ID, APP_REPORT_NUM, SADD_APPNO -->
+        FROM TBG_SADD A, TEMP_APPR B
+        WHERE SADD_OFFICE = '01'
+        AND SADD_SITE = #{SITE}
+        AND SADD_YYMM BETWEEN #{SDATE} AND #{EDATE}
+        AND SADD_APPNO = APP_NO(+)
+        ORDER BY SADD_YYMM DESC, SADD_SEQ DESC
+    </select>
+
+    <select id="selectChildGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT A.CSIL_OFFICE, A.CSIL_SITE, A.SADD_CHSU, A.CSIL_GUBU, A.CSIL_GOGU,A.CSIL_LGOJ, A.CSIL_MGOJ, A.CSIL_ITEM,
+        A.CSIL_SEQ, A.CSIL_NAME, A.CSIL_SIZE, A.CSIL_UNIT, C.SILD_DQTY, C.SILD_DPRI, C.SILD_DAMT,
+        C.SILD_SQTY, C.SILD_SPRI, C.SILD_SAMT, A.CSIL_SQTY, D.GITA_NAME, E.GITA_NAME BMOK_NAME
+        FROM (SELECT A.*, B.SADD_CHSU
+            FROM TBG_CSIL A, TBG_SADD B
+            WHERE A.CSIL_OFFICE = '01'
+            AND A.CSIL_SITE = #{SITE}
+            AND A.CSIL_SEQ = #{SEQ}
+            <!-- AND A.CSIL_GUBU LIKE '%' || #{GUBU} || '%'
+            AND A.CSIL_GOGU LIKE '%' || #{GOGU} || '%'
+            AND A.CSIL_LGOJ LIKE '%' || #{LGOJ} || '%'
+            AND A.CSIL_MGOJ LIKE '%' || #{MGOJ} || '%' -->
+            AND A.CSIL_SEQ = B.SADD_SEQ
+            AND A.CSIL_OFFICE = B.SADD_OFFICE
+            AND A.CSIL_SITE = B.SADD_SITE
+            ) A
+        , TBG_SILD C, TCM_GITA D, TCM_GITA E
+        WHERE A.CSIL_OFFICE = C.SILD_OFFICE(+)
+        AND A.CSIL_SITE = C.SILD_SITE(+)
+        AND A.SADD_CHSU = C.SILD_CHSU(+)
+        AND A.CSIL_GUBU = C.SILD_GUBU(+)
+        AND A.CSIL_GOGU = C.SILD_GOGU(+)
+        AND A.CSIL_LGOJ = C.SILD_LGOJ(+)
+        AND A.CSIL_MGOJ = C.SILD_MGOJ(+)
+        AND A.CSIL_ITEM = C.SILD_ITEM(+)
+        AND D.GUBU_CODE(+) = '01'
+        AND A.CSIL_GBN = D.GITA_CODE(+)
+        AND E.GUBU_CODE(+) = '02'
+        AND A.CSIL_BMOK = E.GITA_CODE(+)
+        ORDER BY CSIL_GUBU, CSIL_GOGU, CSIL_LGOJ, CSIL_MGOJ, CSIL_ITEM
+    </select>
+
+    <select id="selectTree" parameterType="HashMap" resultType="HashMap">
+        SELECT DISTINCT CGOJ_GUBU "id", '0' "pid", B.GUBU_NAME "text", CGOJ_GUBU CODE, 1 LEVEL_CD
+        FROM TBG_CGOJ A, TBG_GUBU B
+        WHERE CGOJ_OFFICE = '01'
+            AND CGOJ_SITE = #{SITE}
+            AND CGOJ_SEQ = #{SEQ}
+            AND CGOJ_GUBU = GUBU_CODE
+        UNION ALL
+        SELECT DISTINCT CGOJ_GUBU || CGOJ_GOGU "id", CGOJ_GUBU "pid", B.GOGU_NAME "text", CGOJ_GOGU CODE, 2 LEVEL_CD
+        FROM TBG_CGOJ, TBG_GOGU B
+        WHERE CGOJ_OFFICE = '01'
+        AND CGOJ_SITE = #{SITE}
+            AND CGOJ_SEQ = #{SEQ}
+            AND CGOJ_OFFICE = GOGU_OFFICE
+            AND CGOJ_SITE = GOGU_SITE
+            AND CGOJ_GOGU = GOGU_CODE
+        UNION ALL
+        SELECT DISTINCT CGOJ_GUBU || CGOJ_GOGU || CGOJ_LGOJ "id", CGOJ_GUBU || CGOJ_GOGU "pid", B.LGOJ_NAME "text", CGOJ_LGOJ CODE, 3 LEVEL_CD
+        FROM TBG_CGOJ A, TBG_LGOJ B
+        WHERE CGOJ_OFFICE = '01'
+            AND CGOJ_SITE = #{SITE}
+            AND CGOJ_SEQ = #{SEQ}
+            AND CGOJ_GUBU = B.LGOJ_GUBU
+            AND CGOJ_LGOJ = B.LGOJ_CODE
+        UNION ALL
+        SELECT CGOJ_GUBU || CGOJ_GOGU || CGOJ_LGOJ || CGOJ_MGOJ "id", CGOJ_GUBU || CGOJ_GOGU || CGOJ_LGOJ "pid", MGOJ_NAME "text", CGOJ_MGOJ NM, 4 LEVEL_CD
+        FROM TBG_CGOJ A, TBG_MGOJ B
+        WHERE CGOJ_OFFICE = '01'
+            AND CGOJ_SITE = #{SITE}
+            AND CGOJ_SEQ = #{SEQ}
+            AND CGOJ_GUBU = B.MGOJ_GUBU
+            AND CGOJ_LGOJ = B.MGOJ_LGOJ
+            AND CGOJ_MGOJ = B.MGOJ_CODE
+        ORDER BY "id"
+    </select>
+</mapper>

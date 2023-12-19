@@ -1,0 +1,218 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        searchOpt1: [],
+        searchOpt2: [],
+
+        selectList: () => {
+            var constDivision = $("#construction_type").val();
+            if (!constDivision)
+                constDivision = '';
+
+            var constName = $("#construction_name").val();
+            if (!constName)
+                constName = '';
+
+            var param = {
+                constDivision: constDivision,
+                constName: constName
+            };
+            console.log(param);
+            exios.get('/api/ASB060/selectList', param).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, true);
+                viewX.grid_01.clearStatus();
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+
+        selectSearchCondition: () => {
+            exios.get('/api/ASB060/constDivision').then((response) => {
+                viewX.searchOpt1 = response.data;
+                SBUxMethod.refresh("select_opt1");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+
+            exios.get('/api/ASB060/constName').then((response) => {
+                viewX.searchOpt2 = response.data;
+                SBUxMethod.refresh("select_opt2");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+    };
+
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                frozenbottomrows: 1,   //0으로 설정 시 합계row 조회 row 바로 아래에 붙음
+                columns: [
+                    { caption: ['', ''], ref: 'check', width: '30px', style: 'text-align:center', type: 'checkbox', typeinfo: { fixedcellcheckbox: { usemode: true }, ignoreupdate: true }, ignoreupdate: true },
+                    { caption: ['현장명', '현장명'], ref: 'SITE_NAME', width: '180px', style: 'text-align:center', type: 'input' },
+                    { caption: ['공종명', '공종명'], ref: 'INSUR_MGOJ', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['업체명', '업체명'], ref: 'INSUR_CUST', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['담당자', '담당자'], ref: 'INSUR_DAM', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['보험사', '보증사'], ref: 'INSUR_WCUST', width: '103px', style: 'text-align:center', type: 'input' },
+                    { caption: ['보험사', '지점'], ref: 'INSUR_SUB', width: '103px', style: 'text-align:center', type: 'input' },
+                    { caption: ['청구내역', '청구일'], ref: 'INSUR_RDATE', width: '103px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['청구내역', '청구금액(원)'], ref: 'INSUR_RAMT', width: '200px', style: 'text-align:center', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['확정내역', '수령일'], ref: 'INSUR_SDATE', width: '103px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['확정내역', '확정금액(원)'], ref: 'INSUR_SAMT', width: '200px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['확정내역', '투입계정'], ref: 'INSUR_ACCNO', width: '103px', style: 'text-align:center', type: 'input' },
+                    { caption: ['청구사유', '청구사유'], ref: 'INSUR_CAUSE', width: '150px', style: 'text-align:center', type: 'input' },
+                ],
+                total: {
+                    type: 'grand',
+                    position: 'bottom',
+                    columns: {
+                        standard: [1, 2],
+                        sum: [10, 12],
+                    },
+                    grandtotalrow: {
+                        titlecol: 1,
+                        titlevalue: '하자보수보증처리현황 합계',
+                        style: 'background-color: rgb(146, 178, 197); font-weight: bold; color: rgb(255, 255, 255);',
+                        stylestartcol: 1
+                    },
+                    datasorting: true,
+                    totalformat: {
+                        10: "#,### 원",
+                        12: "#,### 원",
+                    }
+                },
+            },
+        }
+        viewX.selectSearchCondition();
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.selectList();
+
+    });
+
+</script>
+<style>
+    html,
+    body,
+    body>div {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    div {
+        padding: 0;
+        margin: 0;
+    }
+
+    /*header*/
+    .softbowl-tem-header {
+        display: table;
+        width: 100%;
+        height: 5%;
+        padding: 10px;
+        background: #386ec7;
+        box-sizing: border-box;
+    }
+
+    .softbowl-tem-header h3 {
+        display: table-cell;
+        color: #fff;
+    }
+
+    /*content*/
+    .softbowl-tem-contents {
+        width: 100%;
+        height: 95%;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .softbowl-tem-title {
+        height: 5%;
+        padding-bottom: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #444;
+    }
+
+    .softbowl-form {
+        margin-left: 10px;
+    }
+
+    .softbowl-grid {
+        margin-left: 20px;
+    }
+
+    #selectList {
+        width: 60px;
+        height: 30px;
+        background-color: #E1EAF2;
+        text-align: center;
+        margin-left: 20px;
+        font-size: 15px;
+        color: #0E3979;
+        font-weight: bold;
+    }
+
+    .sbt-select+span {
+        margin-left: 310px;
+    }
+
+    #selectList:hover {
+        background-color: #C5DCF0;
+    }
+
+    #text {
+        font-size: 15px;
+        font-weight: bold;
+    }
+</style>
+
+<body>
+    <div class="softbowl-form">
+        <div class="menuPath-wrap">
+            <div class="menuPath-title"></div>
+        </div>
+        <div class="softbowl-tem-contents">
+            <div id="searchEcodeName" style="width:90%;">
+                <span id="text">공사구분 :</span>&nbsp;
+                <sbux-select id="construction_type" name="select_opt1" uitype="single" jsondata-ref="viewX.searchOpt1"
+                    jsondata-text="COMM_LOOK" jsondata-value="COMM_LCODE" style="width:300px;"
+                    auto-unselected-text="true" unselected-text="전 체" wrap-class="sbt-select"
+                    no-data-text="불러올 데이터가 없습니다." /></sbux-select>
+
+
+                <span id="text">현장명 :</span>&nbsp;
+                <sbux-select id="construction_name" name="select_opt2" uitype="single" jsondata-ref="viewX.searchOpt2"
+                    jsondata-text="SITE_LOOK" jsondata-value="SITE_CODE" style="width:300px;"
+                    auto-unselected-text="true" unselected-text="전 체" wrap-class="sbt-select"
+                    no-data-text="불러올 데이터가 없습니다."></sbux-select>
+                <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회"
+                    onclick="viewX.selectList(selectList)"></sbux-button>
+                </br>
+                </br>
+            </div>
+        </div>
+        <hr>
+        <div class="softbowl-grid">
+            <div>
+                <div id="SBGridArea" style="width:100%;height:650px;margin:5px;float:center;"></div>
+
+            </div>
+
+</body>

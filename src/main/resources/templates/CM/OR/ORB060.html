@@ -1,0 +1,93 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        reportTypeJson: [
+            { text: '현장설명실시계획품의서', value: 'ORB0200R' },
+            { text: '외주계약의뢰내역', value: 'ORB050R' },
+        ],
+        selectSite: function () {
+            exios.get('/api/ORB060/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectGrid();
+            });
+        },
+        selectGrid: function () {
+            var params = {
+                SITE:  $('#select_site').val(),
+            };
+            exios.get('/api/ORB060/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false)
+                viewX.grid_01.refresh({'focus': false});
+            })
+        },
+        reportTypeChange: function () {
+            console.log('출력구분 변경');
+        },
+        button_printClick: function () {
+            console.log('출력 버튼 클릭');
+        }
+    }
+
+    $(function () {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                height: '600px',
+                explorerbar: 'sort',
+                custompanel: [],
+                primarykey: [],
+                columns: [
+                    { caption: ['발주번호'], ref: 'ORDR_BNO', width: '160px', style: 'text-align:center', type: 'output', sortable: false },
+                    { caption: ['발주공종명'], ref: 'ORDR_NAME', width: '340px', style: 'text-align:left', type: 'output' },
+                ]
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectSite();
+    })
+</script>
+<style>
+    .search-container {
+        display: grid;
+        width: 340px;
+        margin: 10px;
+    }
+
+    .search-container #button_print {
+        width: 50px;
+    }
+
+    .grid-container {
+        margin: 10px;
+    }
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="search-container">
+        현장명
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="viewX.selectGrid();">
+        </sbux-select>
+        출력구분
+        <sbux-select id="select_reportType" name="select_reportType" uitype="single"
+            jsondata-ref="viewX.reportTypeJson"
+            onchange="viewX.reportTypeChange()">
+        </sbux-select>
+        <sbux-button id="button_print" name="button_print" uitype="normal" text="출력"
+            onClick="viewX.button_printClick()">
+        </sbux-button>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</body>

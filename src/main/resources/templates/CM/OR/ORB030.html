@@ -1,0 +1,260 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {},
+        gridData_01: {}, gridData_02: {},
+        constJson:[],
+        ITEMM_KB: '',
+        selectedRow: '',
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+        saveGridData: (gridName) => {
+            console.log(gridName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(gridName);
+            var url = '/api/AAXA100SI/' + gridName + '/gridData';
+            console.log(variables.datagridVar)
+            console.log(variables.dataVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            var addData;
+            if (gridName === 'viewX.grid_01')
+                addData = { 'GITAA_CD': '***' };
+
+            if (gridName === 'viewX.grid_02' && !sendData.ITEMM_KB)
+                addData = { 'ITEMM_KB': viewX.ITEMM_KB };
+
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                } catch (e) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(e);
+                }
+            };
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        loadGridData: (gridId, showAlert) => {
+            viewX.selectList();
+        },
+        selectList: () => {
+            let gubun = $("#gubun").val();
+            if (!gubun) gubun = '';
+            const searchCondition = {
+                gubun: gubun
+            };
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/AAXA100SI/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(() => {
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+        selectSearchCondition: () => {
+            exios.get('/api/ASB060/constName').then((response) => {
+                viewX.constJson = response.data;
+                SBUxMethod.refresh("name");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+        selectDetailList: (param) => { //검색값에서 다시 찾도록...
+            console.log(param)
+            let leng = viewX.gridData_02.length;
+            console.log(leng);
+            let filteredData = [];
+            for (let i = 0; i < leng; i++) {
+                if (viewX.gridData_02[i].GITAA_NM.includes(param)) {
+                    filteredData.push(viewX.gridData_02[i]);
+                }
+            }
+            console.log(filteredData);
+            SBUxMethod.refresh("viewX.grid_02");
+            viewX.grid_02.setGridData(filteredData, false);
+            viewX.grid_02.clearStatus();
+            viewX.grid_02.refresh({ 'focus': false });
+        },
+        getSelectedRows: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            const searchCondition = {
+                code: sel_data.ITEMM_KB
+            }
+            exios.get('/api/AAXA100SI/selectDetailList', searchCondition).then((response) => {
+                viewX.gridData_02 = response.data;
+            }).then(() => {
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.clearStatus();
+                viewX.grid_02.refresh({ 'focus': false });
+                viewX.grid_02.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            viewX.ITEMM_KB = sel_data.ITEMM_KB;
+        }
+    };
+
+    $(function () {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['구분코드'], ref: 'ITEMM_KB', width: '30%', style: 'text-align:center', type: 'input' },
+                    { caption: ['구분코드명'], ref: 'GITAA_NM', width: '60%', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['ITEMM_KB'],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+            },
+
+            tab_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['세부코드'], ref: 'GITAA_CD', width: '30%', style: 'text-align:center', type: 'input' },
+                    { caption: ['세부코드명'], ref: 'GITAA_NM', width: '40%', style: 'text-align:center', type: 'input' },
+                    { caption: ['여분1'], ref: 'GITAA_C1', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['여분2'], ref: 'GITAA_C2', width: '15%', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['GITAA_CD'],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+            }
+        };
+
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+        viewX.grid_01.bind('click', 'viewX.getSelectedRows');
+        viewX.grid_01.bind('keyup', 'viewX.getSelectedRows');
+        viewX.grid_01.bind('keydown', 'viewX.getSelectedRows');
+        viewX.selectList();
+        viewX.selectSearchCondition();
+    });
+</script>
+<style>
+
+    div {
+        padding: 0;
+        margin: 0;
+    }
+
+    /*header*/
+    .softbowl-tem-header {
+        display: table;
+        width: 100%;
+        height: 5%;
+        padding: 10px;
+        background: #386ec7;
+        box-sizing: border-box;
+    }
+
+    .softbowl-tem-header h3 {
+        display: table-cell;
+        color: #fff;
+    }
+
+    .softbowl-form {
+        margin-left: 10px;
+    }
+
+    .softbowl-grid {
+        margin-left: 20px;
+    }
+
+    #selectList {
+        width: 60px;
+        height: 30px;
+        text-align: center;
+        margin-left: 20px;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    #text {
+        font-size: 15px;
+        font-weight: bold;
+        margin-left: 60px;
+        margin-right: 120px;
+    }
+
+    #searchEcodeName {
+        display: flex;
+        align-items: center;
+        /* 수직 정렬 */
+    }
+</style>
+
+<body>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        <div class="softbowl-form">
+            <div id="searchEcodeName" style="display:flex;">
+                <span id="text">현장명 :</span>
+                <sbux-select id="name" name="name" uitype="single" jsondata-ref="viewX.constJson"
+                    jsondata-text="SITE_LOOK" jsondata-value="SITE_CODE" style="width:300px; margin-right:20px;"
+                    auto-unselected-text="true" unselected-text="전 체" wrap-class="sbt-select"
+                    ></sbux-select>
+                    <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회"
+                    onclick="viewX.selectList(btn_norm_2)" style="margin-right:700px;"></sbux-button>
+                <sbux-button id="button_01" name="button_01" uitype="normal" text="현설완료취소"
+                    button-color="blue"></sbux-button>
+                <sbux-button id="button_02" name="button_02" uitype="normal" text="공내역이메일발송"
+                    button-color="blue"></sbux-button>
+                <sbux-button id="button_03" name="button_03" uitype="normal" text="공내역다운로드"
+                    button-color="blue"></sbux-button>
+                </br>
+                </br>
+            </div>
+        </div>
+        <hr>
+        <div style="display:flex;">
+            <div id="SBGridArea" style="width:30%;height:730px;margin:5px;float:center;"></div>
+            <div id="SBGridArea_02" style="width:70%;height:730px;margin:5px;float:center;"></div>
+        </div>
+</body>

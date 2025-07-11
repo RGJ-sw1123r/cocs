@@ -1,0 +1,44 @@
+    <div th:fragment="modal_03" id="modal_03">
+        <div id="modal_03_body">
+            <div id="SBGridArea_04" style="height: 460px"></div>
+            <div>
+                <sbux-label id="label_addItem" name="label_addItem" uitype="normal" text="추가 ITEM 입력"
+                    style="font-size: 14px; font-weight: bold">
+                </sbux-label>
+                <table>
+                    <td>item<br />코드</td>
+                    <td>
+                        <sbux-input id="input_itemCode" name="input_itemCode" uitype="text" disabled></sbux-input>
+                    </td>
+                    <td>
+                        <button type="button" id="searchAddItem"
+                            style="margin-right: 10px"
+                            onclick="viewX.searchAddItem()">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+                    </td>
+                    <td>명칭</td>
+                    <td>
+                        <sbux-input id="divideItem_input_itemName" name="divideItem_input_itemName" uitype="text"></sbux-input>
+                    </td>
+                    <td>규격</td>
+                    <td>
+                        <sbux-input id="input_size" name="input_size" uitype="text"></sbux-input>
+                    </td>
+                    <td>단위</td>
+                    <td>
+                        <sbux-input id="input_unit" name="input_unit" uitype="text"></sbux-input>
+                    </td>
+                    <td>발주예정수량</td>
+                    <td>
+                        <sbux-input id="input_pqty" name="input_pqty" uitype="text"></sbux-input>
+                    </td>
+                </table>
+            </div>
+        </div>
+        <div id="modal_03_footer">
+            <sbux-button id="modal_03_button_01" name="modal_03_button_01" uitype="normal" text="저장" button-color="blue"
+                onclick="viewX.modal_divideItemClick()">
+            </sbux-button>
+        </div>
+    </div>

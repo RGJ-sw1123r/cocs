@@ -1,0 +1,14 @@
+stages:
+  - deploy
+
+deploy_to_linux:
+  stage: deploy
+  only:
+    - master
+  script:
+    - echo "Deploying to Linux server..."
+   
+    - apt-get install rsync -y  # rsync를 설치합니다.
+    - rsync -avz ./ erpdemo@192.168.0.99:/home/erpdemo/CocsWoobang  # rsync로 파일을 복사합니다.
+  tags:
+    - release_main

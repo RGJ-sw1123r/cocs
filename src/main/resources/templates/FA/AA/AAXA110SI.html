@@ -1,0 +1,566 @@
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {},
+        gridData_01: {}, gridData_02: {},
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        selectedRow: '',
+        saeobJson: [
+            { id: "1", text: "(S) 사업자번호", value: "S" },
+            { id: "2", text: "(P) 주민등록번호", value: "P" },
+        ],
+        bankJson: [],
+        custJson: [],
+        taxJson: [],
+        LDATE_DT: '',
+        LTIME_TM: '',
+        JOBLG_JN: '',
+
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+        saveGridData: (gridName) => {
+            console.log(gridName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(gridName);
+            var url = '/api/AAXA110SI/' + gridName + '/gridData';
+            console.log(variables.datagridVar)
+            console.log(variables.dataVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            viewX.todayDate();
+            var addData = {
+                LDATE_DT: LDATE_DT,
+                LTIME_TM: LTIME_TM,
+                JOBLG_JN: 'admin',   // 추후 로그인 session 추가 후 수정할 것
+            };
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                } catch (e) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(e);
+                }
+            };
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+        todayDate: () => {
+            var currentDate = new Date();
+            var year = currentDate.getFullYear();
+            var month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            var day = String(currentDate.getDate()).padStart(2, '0');
+            LDATE_DT = `${year}-${month}-${day}`;
+            var hours = String(currentDate.getHours()).padStart(2, '0');
+            var minutes = String(currentDate.getMinutes()).padStart(2, '0');
+            var seconds = String(currentDate.getSeconds()).padStart(2, '0');
+            LTIME_TM = `${hours}:${minutes}:${seconds}`;
+        },
+
+        selectList: () => {
+            var biyon = $("#biyon").val();
+            if (!biyon) biyon = '';
+            var name = $("#name").val();
+            if (!name) name = '';
+            var dued = $("#DUED_DENY").val();
+            var searchCondition = {
+                biyon: biyon,
+                name: name,
+                dued: dued
+            };
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/AAXA110SI/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(() => {
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            viewX.custList();
+            viewX.bankList();
+            viewX.taxList();
+        },
+
+        loadGridData: (gridId, showAlert) => {
+            console.log(gridId);
+            viewX.selectList();
+            viewX.custList();
+            viewX.bankList();
+            viewX.taxList();
+        },
+
+        getSelectedRows: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+        },
+
+        custList: () => {
+            exios.get('/api/AAXA110SI/custList').then((response) => {
+                viewX.custJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh("biyon");
+                SBUxMethod.refresh("BIYON_KB");
+            });
+        },
+        taxList: () => {
+            exios.get('/api/AAXA110SI/taxList').then((response) => {
+                viewX.taxJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh("TAXXX_TY");
+            });
+        },
+        bankList: () => {
+            exios.get('/api/ORA030/bankList').then((response) => {
+                viewX.bankJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh("BANKK_CD");
+            });
+        },
+
+        findAddr: (target) => {
+            new window.daum.Postcode({
+                oncomplete: function (data) {
+                    const zipCode = data.zonecode
+                    const address = data.buildingName ? data.address + " (" + data.buildingName + ")" : data.address
+                    console.log(zipCode + " " + address);
+                    console.log(target.id);
+                    console.log(data);
+                    var col = viewX.grid_01.getColRef("ADDRE_NY");
+                    console.log(viewX.selectedRow)
+                    $("#POST_CODE").val(zipCode);
+                    $("#ADDRE_NY").val(address);
+                    viewX.grid_01.setRowStatus(viewX.grid_01.getSelectedRows()[0], 'update');
+                }
+            }).open()
+        },
+
+        button_AAXA111SIClick: () => {
+            SBUxMethod.openModal('modal_01');
+            viewX.modal_01Info();
+        },
+        modal_01Info: (name) => {
+            console.log(name);
+            exios.get('/api/AAXA110SI/modal_01Info', { name: name }).then((response) => {
+                viewX.gridData_02 = response.data;
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.clearStatus();
+                viewX.grid_02.refresh({ 'focus': false });
+            }).done(() => {
+                SBUxMethod.refresh("m_name");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        }
+    };
+
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['사업자번호'], ref: 'SAEOB_NO', width: '20%', style: 'text-align:center', type: 'output' },
+                    { caption: ['거래처명'], ref: 'DEALR_NM', width: '20%', style: 'text-align:center', type: 'input' },
+                    { caption: ['과세구분'], ref: 'TAXXX_TY', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['사업자구분'], ref: 'SAEOB_TY', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['종료일'], ref: 'DEALR_ED', width: '20%', style: 'text-align:center', type: 'input' },
+                    { caption: ['신용카드거래처'], ref: 'CARDD_KB', type: 'input', hidden: true },
+                    { caption: ['거래처종류'], ref: 'BIYON_KB', type: 'input', hidden: true },
+                    { caption: ['대표자명'], ref: 'DEALR_DP', type: 'input', hidden: true },
+                    { caption: ['담당자'], ref: 'DAMDA_ID', type: 'input', hidden: true },
+                    { caption: ['업태'], ref: 'UPTAE_NY', type: 'input', hidden: true },
+                    { caption: ['FAX'], ref: 'FAXXX_NO', type: 'input', hidden: true },
+                    { caption: ['종목'], ref: 'UPJON_NY', type: 'input', hidden: true },
+                    { caption: ['이메일'], ref: 'EMAIL_ID', type: 'input', hidden: true },
+                    { caption: ['법인번호'], ref: 'BUPIN_NO', type: 'input', hidden: true },
+                    { caption: ['전화번호'], ref: 'TELEP_NO', type: 'input', hidden: true },
+                    { caption: ['주소'], ref: 'ADDRE_NY', type: 'input', hidden: true },
+                    { caption: ['상세주소'], ref: 'ADDRE_N2', type: 'input', hidden: true },
+                    { caption: ['과세유형'], ref: 'TAXXX_TY', type: 'input', hidden: true },
+                    { caption: ['어음위탁구분'], ref: 'WITAK_KB', type: 'input', hidden: true },
+                    { caption: ['출금금지'], ref: 'CHOOL_KB', type: 'input', hidden: true },
+                    { caption: ['은행코드'], ref: 'BANKK_CD', type: 'input', hidden: true },
+                    { caption: ['예금주'], ref: 'DEPOS_NM', type: 'input', hidden: true },
+                    { caption: ['계좌번호'], ref: 'DEPOS_NO', type: 'input', hidden: true },
+                    { caption: ['가맹점번호'], ref: 'AFFIL_ID', type: 'input', hidden: true },
+                    { caption: ['거래시작일'], ref: 'DEALR_ST', type: 'input', hidden: true },
+                    { caption: ['거래종료일'], ref: 'DEALR_ED', type: 'input', hidden: true },
+                    { caption: ['최초등록일'], ref: 'SDATE_DT', type: 'input', hidden: true },
+                    { caption: ['최종등록일'], ref: 'LDATE_DT', type: 'input', hidden: true },
+                    { caption: ['최종시간'], ref: 'LTIME_TM', type: 'input', hidden: true },
+                    { caption: ['최종부서'], ref: 'SDEPT_CD', type: 'input', hidden: true },
+                    { caption: ['최초등록자'], ref: 'SWRIT_JN', type: 'input', hidden: true },
+                    { caption: ['최종등록자'], ref: 'JOBLG_JN', type: 'input', hidden: true },
+                ],
+                primarykey: ['SAEOB_NO'],
+                custompanel: ['refresh', 'delete', 'add', 'save'],
+            },
+
+            tab_02: {
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: ['사업자번호'], ref: 'SAEOB_NO', width: '30%', style: 'text-align:center', type: 'output' },
+                    { caption: ['변경일자'], ref: 'CDATE_DT', width: '20%', style: 'text-align:center', type: 'output' },
+                    { caption: ['변경시간'], ref: 'CTIME_TM', width: '20%', style: 'text-align:center', type: 'output' },
+                    { caption: ['작업자'], ref: 'JOBLG_JN', width: '20%', style: 'text-align:center', type: 'output' },
+                    { caption: ['거래처명'], ref: 'DEALR_NM', width: '40%', style: 'text-align:center', type: 'output' },
+                    { caption: ['대표자명'], ref: 'DEALR_DP', width: '30%', style: 'text-align:center', type: 'output' },
+                    { caption: ['주소'], ref: 'ADDRE_NY', width: '50%', style: 'text-align:center', type: 'output' },
+                    { caption: ['상세주소'], ref: 'ADDRE_N2', width: '50%', style: 'text-align:center', type: 'output' },
+                    { caption: ['변경내역'], ref: 'ODATA_NY', width: '50%', style: 'text-align:center', type: 'output' },
+                ],
+                primarykey: ['SAEOB_NO'],
+                custompanel: ['refresh'],
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+        viewX.grid_01.bind('click', 'viewX.getSelectedRows');
+        viewX.selectList();
+    });
+</script>
+
+
+<body>
+    <div class="menuPath-wrap">
+        <h3>거래처 코드 관리</h3><!-- DNS - 제목 추가 -->
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents ">
+        <div class="softbowl-form sortbox">
+            <div id="searchEcodeName" class="sortbox_inner">
+                <ul class="sortitem">
+                    <li>
+                        <!-- <span id="text">거래처 종류</span> -->
+                        <label for="biyon" id="text">거래처 종류</label>
+                        <sbux-select id="biyon" name="biyon" uitype="single" jsondata-ref="viewX.custJson"
+                            jsondata-text="GITAA_NAME" jsondata-value="GITAA_CD" style="width:150px;"
+                            auto-unselected-text="true" unselected-text="전 체" wrap-class="sbt-select"
+                            onchange="viewX.selectList(biyon)" /></sbux-select>
+                    </li>
+                    <li>
+                        <!-- <span id="text">거래처명</span> -->
+                        <label for="name" id="text">거래처명</label>
+                        <sbux-input id="name" name="name" uitype="text" style="width:300px;" minlength="0"
+                            maxlength="15" wrap-class="sbt-select" onchange="viewX.selectList(name)"></sbux-input>
+                    </li>
+                    <li class="d_flex alg_m">
+                        <!-- <span id="text">종료자료 제외하기</span> -->
+                        <sbux-checkbox id="DUED_DENY" name="DUED_DENY" uitype="normal"
+                            text-right-padding="8px" true-value="1" false-value="0" onchange="viewX.selectList(DUED_DENY)"></sbux-checkbox>
+                        <label for="DUED_DENY" id="text">종료자료 제외하기</label>
+                    </li>
+                </ul>
+                <div class="sort_btn">
+                    <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run"
+                        onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+                    <sbux-button id="" name="btn_norm_1" uitype="normal" text="출력" class="btn_print"
+                        onclick=""></sbux-button>
+                    <sbux-button id="button_AAXA111SI" name="button_AAXA111SI" uitype="normal"
+                        text="변경정보" onclick="viewX.button_AAXA111SIClick()" target-id="modal_01" class="btn_etc"></sbux-button>
+                    <sbux-modal id="modal_01" name="modal_01" uitype="large" is-draggable="true"
+                        header-title="거래처코드관리 변경정보조회" header-close-glyphs="glyphicon-remove"
+                        body-html-id="modal_01_body" footer-html-id="modal_01_footer">
+                    </sbux-modal>
+                </div>
+            </div>
+        </div>
+        <div class="softbowl-grid ">
+            <div class="d_flex col-2">
+                <div id="SBGridArea" style="height: 779px;" class="flex-5 mr10"></div><!--width:100%; height:780px; float:center;-->
+                <div class="sbt-input-tab cocs-tabbox flex-5">
+                    <div class="tab-content">
+                        <div id="tab_01" class="gene_info formsheet">
+                            <div class="sbt-tab-wrap">
+                                <div class="sbt-grid">
+                                    <div id="SBGridArea_01">
+                                        <p class="ntc_initial">
+                                            <span>필수 입력 항목</span>
+                                        </p>
+                                        <ul class="ipt_line">
+                                            <li class="initial">
+                                                <label for="SAEOB_TY" id="inner-text">사업자구분</label>
+                                                <sbux-select id="SAEOB_TY" name="SAEOB_TY" uitype="single"
+                                                    grid-id="viewX.grid_01" auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" jsondata-ref="viewX.saeobJson"
+                                                    jsondata-text="text" jsondata-value="value" />
+                                                </sbux-select>
+                                            </li>
+                                            <li class="noblt col-check">
+                                                <sbux-checkbox id="CARDD_KB" name="CARDD_KB" uitype="normal" text="신용카드/현금영수증 거래처" text-left-padding="5px" text-right-padding="10px" true-value="1" 
+                                                    false-value="0" grid-id="viewX.grid_01" required></sbux-checkbox>
+                                                <sbux-checkbox id="CUST_BESTCO" name="CUST_BESTCO" uitype="normal" text="코드체크제외" text-left-padding="5px" text-right-padding="0"
+                                                    true-value="1" false-value="0" grid-id="viewX.grid_01" required></sbux-checkbox>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="SAEOB_NO" id="inner-text">거래처코드</label>
+                                                <sbux-input id="SAEOB_NO" name="SAEOB_NO" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="BIYON_KB" id="inner-text">거래처종류</label>
+                                                <sbux-select id="BIYON_KB" name="BIYON_KB" uitype="single"
+                                                    jsondata-ref="viewX.custJson" jsondata-text="GITAA_NAME"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_CD"
+                                                    auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" /></sbux-select>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="DEALR_NM" id="inner-text">거래처명</label>
+                                                <sbux-input id="DEALR_NM" name="DEALR_NM" uitype="text" minlength="0"
+                                                    maxlength="30" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="DEALR_DP" id="inner-text">대표자명</label>
+                                                <sbux-input id="DEALR_DP" name="DEALR_DP" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="UPTAE_NY" id="inner-text">업태</label>
+                                                <sbux-input id="UPTAE_NY" name="UPTAE_NY" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="FAXXX_NO" id="inner-text">FAX</label>
+                                                <sbux-input id="FAXXX_NO" name="FAXXX_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="UPJON_NY" id="inner-text">종목</label>
+                                                <sbux-input id="UPJON_NY" name="UPJON_NY" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="EMAIL_ID" id="inner-text">E-MAIL</label>
+                                                <sbux-input id="EMAIL_ID" name="EMAIL_ID" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="BUPIN_NO" id="inner-text">법인번호</label>
+                                                <sbux-input id="BUPIN_NO" name="BUPIN_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select" placeholder="(EX) 123456-1234567"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="TELEP_NO" id="inner-text">전화번호</label>
+                                                <sbux-input id="TELEP_NO" name="TELEP_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="DAMDA_ID" id="inner-text">담당자</label>
+                                                <sbux-input id="DAMDA_ID" name="DAMDA_ID" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            
+                                            <li class="noblt col-check">
+                                            </li>
+                                        </ul>
+                                        <hr>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="POST_CODE" id="inner-text">우편번호</label>
+                                                <sbux-input id="POST_CODE" name="POST_CODE" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                                    <button type="button" id="addr2Bt" class="btn btn-default btn-sm"
+                                                    onclick="viewX.findAddr(POST_CODE)">
+                                                    <span class="glyphicon glyphicon-search"></span>
+                                                </button>
+                                            </li>
+                                            <li class="noblt col-check"></li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="ADDRE_NY" id="inner-text">주소</label>
+                                                <sbux-input id="ADDRE_NY" name="ADDRE_NY" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="ADDRE_N2" id="inner-text">상세주소</label>
+                                                <sbux-input id="ADDRE_N2" name="ADDRE_N2" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="TAXXX_TY" id="inner-text">과세유형</label>
+                                                <sbux-select id="TAXXX_TY" name="TAXXX_TY" uitype="single"
+                                                    jsondata-ref="viewX.taxJson" jsondata-text="GITAA_NAME"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_NM"
+                                                    auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" /></sbux-select>
+                                            </li>
+                                            <li class="noblt col-check">
+                                                <sbux-checkbox id="WITAK_KB" name="WITAK_KB" uitype="normal"
+                                                    text="어음위탁구분" text-left-padding="5px" text-right-padding="25px"
+                                                    true-value="Y" false-value="N" grid-id="viewX.grid_01"
+                                                    required></sbux-checkbox>
+                                                <sbux-checkbox id="CHOOL_KB" name="CHOOL_KB" uitype="normal" text="출금금지"
+                                                    text-left-padding="5px" text-right-padding="25px" true-value="1"
+                                                    false-value="0" grid-id="viewX.grid_01" required></sbux-checkbox>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="BANKK_CD" id="inner-text">은행코드</label>
+                                                <sbux-select id="BANKK_CD" name="BANKK_CD" uitype="single"
+                                                    jsondata-ref="viewX.bankJson" jsondata-text="GITAA_NM"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_CD"
+                                                    auto-unselected-text="true" /></sbux-select>
+                                            </li>
+                                            <li>
+                                                <label for="DEPOS_NM" id="inner-text">예금주</label>
+                                                <sbux-input id="DEPOS_NM" name="DEPOS_NM" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="DEPOS_NO" id="inner-text">계좌번호</label>
+                                                <sbux-input id="DEPOS_NO" name="DEPOS_NO" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="AFFIL_ID" id="inner-text">가맹점번호</label>
+                                                <sbux-input id="AFFIL_ID" name="AFFIL_ID" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <hr>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="DEALR_ST" id="inner-text">거래시작일</label>
+                                                <sbux-datepicker id="DEALR_ST" name="DEALR_ST" uitype="popup"
+                                                    grid-id="viewX.grid_01"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="DEALR_ED" id="inner-text">거래종료일</label>
+                                                <sbux-datepicker id="DEALR_ED" name="DEALR_ED" uitype="popup"
+                                                    grid-id="viewX.grid_01"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="BIGOO_NY" id="inner-text">변경사유</label>
+                                                <sbux-input id="BIGOO_NY" name="BIGOO_NY" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="SDATE_DT" id="inner-text">최초등록</label>
+                                                <sbux-datepicker id="SDATE_DT" name="SDATE_DT" uitype="popup"
+                                                    grid-id="viewX.grid_01" disabled></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="LDATE_DT" id="inner-text">최종등록</label>
+                                                <sbux-datepicker id="LDATE_DT" name="LDATE_DT" uitype="popup"
+                                                    grid-id="viewX.grid_01" disabled></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="LTIME_TM" id="inner-text">최종시간</label>
+                                                <sbux-input id="LTIME_TM" name="LTIME_TM" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="SDEPT_CD" id="inner-text">최초부서</label>
+                                                <sbux-input id="SDEPT_CD" name="SDEPT_CD" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="SWRIT_JN" id="inner-text">최초등록자</label>
+                                                <sbux-input id="SWRIT_JN" name="SWRIT_JN" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="JOBLG_JN" id="inner-text" disabled>최종등록자</label>
+                                                <sbux-input id="JOBLG_JN" name="JOBLG_JN" uitype="text" minlength="0"
+                                                    maxlength="15" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- AAXA111SI.html -->
+        <div th:replace="~{FA/AA/AAXA111SI :: modal_01}"></div>
+    </div>
+</body>

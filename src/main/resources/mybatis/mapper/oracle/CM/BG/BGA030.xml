@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGA030_DAO">
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_EQ = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_EQ = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+    
+    <select id="selectChsu" parameterType="HashMap" resultType="HashMap">
+        SELECT INFO_CHSU CHSU, INFO_CHSU || '차' CHASU, INFO_COMP COMP, INFO_APPFILE, INFO_FILEPATH
+        FROM TBG_INFO
+        WHERE INFO_OFFICE = '01'
+        AND INFO_SITE = #{siteCode}
+        AND INFO_CHSU <![CDATA[ > ]]> 0
+        ORDER BY CHSU DESC
+    </select>
+    
+    <select id="selectParentGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT A.SILD_OFFICE, A.SILD_SITE, A.SILD_CHSU, A.SILD_GUBU, A.SILD_GOGU, A.SILD_LGOJ, A.SILD_MGOJ, A.SILD_ITEM,
+            A.SILD_NAME, A.SILD_SIZE, A.SILD_UNIT,
+            SILD_DQTY, SILD_DPRI, SILD_DAMT, SILD_DMPRI, SILD_DMAMT, SILD_DLPRI, SILD_DLAMT, SILD_DAPRI, SILD_DAAMT,
+            SILD_SQTY, SILD_SPRI, SILD_SAMT, SILD_SMPRI, SILD_SMAMT, SILD_SLPRI, SILD_SLAMT, SILD_SOMPRI, SILD_SOMAMT,
+            SILD_SOLPRI, SILD_SOLAMT, SILD_SOAPRI, SILD_SOAAMT, SILD_SEPRI, SILD_SEAMT, SILD_SAPRI, SILD_SAAMT, SILD_PQTY,
+            SILD_OQTY, SILD_SMAT, SILD_SEQ, SILD_ETC, SILD_SIK
+        FROM TBG_SILD A, TBG_ITEM B
+        WHERE A.SILD_OFFICE = '01'
+            AND A.SILD_SITE = #{siteCode}
+            AND A.SILD_CHSU = #{chsu}
+            AND A.SILD_GUBU = #{gubu}
+            AND A.SILD_GOGU = #{gogu}
+            AND A.SILD_LGOJ = #{lgoj}
+            AND A.SILD_MGOJ = #{mgoj}
+            AND A.SILD_ITEM = B.ITEM_CODE(+)
+            <if test="input_itemName != null">
+                AND A.SILD_NAME LIKE '%' || #{input_itemName} || '%'
+            </if>
+        ORDER BY A.SILD_GOGU, A.SILD_LGOJ, A.SILD_MGOJ, A.SILD_ITEM
+    </select>
+
+    <select id="selectChildGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT NUM, SILD_SITE, SILD_CHSU, SILD_GUBU, SILD_GOGU, SILD_LGOJ, SILD_MGOJ, SILD_ITEM,
+            DECODE(SIGN(5-NUM), 1, '도급', '실행') GUBUN,
+            DECODE(NUM, 1, '합계', 2, '재료비', 3, '노무비', 4, '경비', 5, '합계', 6, '재료비',
+                7, '노무비', 8, '외주재료비', 9, '외주노무비', 10, '외주경비', 11, '장비비', 12, '경비') BIMOK,
+            DECODE(NUM, 1, SILD_DQTY, 5, SILD_SQTY) QNTY,
+            DECODE(NUM, 1, SILD_DPRI, 2, SILD_DMPRI, 3, SILD_DLPRI, 4, SILD_DAPRI, 5, SILD_SPRI, 6, SILD_SMPRI,
+                7, SILD_SLPRI, 8, SILD_SOMPRI, 9, SILD_SOLPRI, 10, SILD_SOAPRI, 11, SILD_SEPRI, 12, SILD_SAPRI) PRI,
+            DECODE(NUM, 1, SILD_DAMT, 2, SILD_DMAMT, 3, SILD_DLAMT, 4, SILD_DAAMT, 5, SILD_SAMT, 6, SILD_SMAMT,
+                7, SILD_SLAMT, 8, SILD_SOMAMT, 9, SILD_SOLAMT, 10, SILD_SOAAMT, 11, SILD_SEAMT, 12, SILD_SAAMT) AMT
+        FROM TBG_SILD, (SELECT NUM FROM COPY_T WHERE NUM BETWEEN 1 AND 12)
+        WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{siteCode}
+            AND SILD_CHSU = #{chsu}
+            AND SILD_GUBU = #{gubu}
+            AND SILD_GOGU = #{gogu}
+            AND SILD_LGOJ = #{lgoj}
+            AND SILD_MGOJ = #{mgoj}
+            AND SILD_ITEM = #{item}
+    </select>
+
+    <select id="selectThreeTree" parameterType="HashMap" resultType="HashMap">
+        WITH TREE_TABLE AS (
+            SELECT MGOJ_CODE, MGOJ_NAME
+            FROM TBG_SGOJ A
+            JOIN TBG_MGOJ B
+                ON A.SILG_GUBU = B.MGOJ_GUBU
+                    AND A.SILG_LGOJ = B.MGOJ_LGOJ
+                    AND A.SILG_MGOJ = B.MGOJ_CODE
+                WHERE SILG_OFFICE = '01'
+                    AND SILG_SITE = #{siteCode}
+                    AND SILG_CHSU = #{chsu}
+                    AND SILG_GUBU = #{gubu}
+                    AND SILG_GOGU = #{gogu}
+                    AND SILG_LGOJ = #{lgoj}
+        )
+        SELECT MAX(A.SILD_OFFICE) AS SILD_OFFICE
+            , MAX(A.SILD_SITE) AS SILD_SITE
+            , MAX(A.SILD_CHSU) AS SILD_CHSU
+            , MAX(A.SILD_GUBU) AS SILD_GUBU
+            , MAX(A.SILD_GOGU) AS SILD_GOGU
+            , MAX(A.SILD_LGOJ) AS SILD_LGOJ
+            , A.SILD_MGOJ
+            , (SELECT MGOJ_NAME FROM TREE_TABLE V WHERE SILD_MGOJ = V.MGOJ_CODE) AS SILD_ITEM
+            , NULL AS SILD_NAME
+            , NULL AS SILD_SIZE
+            , NULL AS SILD_UNIT
+            , 0 AS SILD_DQTY
+            , 0 AS SILD_DPRI
+            , SUM(SILD_DAMT) AS SILD_DAMT
+            , 0 AS SILD_DMPRI
+            , 0 AS SILD_DMAMT
+            , 0 AS SILD_DLPRI
+            , 0 AS SILD_DLAMT
+            , 0 AS SILD_DAPRI
+            , 0 AS SILD_DAAMT
+            , 0 AS SILD_SQTY
+            , 0 AS SILD_SPRI
+            , SUM(SILD_SAMT) AS SILD_SAMT
+            , 0 AS SILD_SMPRI
+            , 0 AS SILD_SMAMT
+            , 0 AS SILD_SLPRI
+            , 0 AS SILD_SLAMT
+            , 0 AS SILD_SOMPRI
+            , 0 AS SILD_SOMAMT
+            , 0 AS SILD_SOLPRI
+            , 0 AS SILD_SOLAMT
+            , 0 AS SILD_SOAPRI
+            , 0 AS SILD_SOAAMT
+            , 0 AS SILD_SEPRI
+            , 0 AS SILD_SEAMT
+            , 0 AS SILD_SAPRI
+            , 0 AS SILD_SAAMT
+            , 0 AS SILD_PQTY
+            , NULL AS SILD_OQTY
+            , 0 AS SILD_SMAT
+            , 0 AS SILD_SEQ
+            , NULL AS SILD_ETC
+            , NULL AS SILD_SIK
+        FROM TBG_SILD A
+        LEFT JOIN TBG_ITEM B
+            ON A.SILD_ITEM = B.ITEM_CODE
+            WHERE A.SILD_OFFICE = '01'
+            AND A.SILD_SITE = #{siteCode}
+            AND A.SILD_CHSU = #{chsu}
+            AND A.SILD_GUBU = #{gubu}
+            AND A.SILD_GOGU = #{gogu}
+            AND A.SILD_LGOJ = #{lgoj}
+        GROUP BY SILD_MGOJ
+        ORDER BY SILD_MGOJ
+    </select>
+    <select id="selectFourTree" parameterType="HashMap" resultType="HashMap">
+        SELECT DISTINCT SILG_GUBU "id", '0' "pid", B.GUBU_NAME "text", SILG_GUBU CODE, 1 LEVEL_CD
+        FROM TBG_SGOJ A, TBG_GUBU B
+        WHERE SILG_OFFICE = '01'
+            AND SILG_SITE = #{siteCode}
+            AND SILG_CHSU = #{chsu}
+            AND SILG_GUBU = GUBU_CODE
+        UNION ALL
+        SELECT DISTINCT SILG_GUBU || SILG_GOGU "id", SILG_GUBU "pid", B.GOGU_NAME "text", SILG_GOGU CODE, 2 LEVEL_CD
+        FROM TBG_SGOJ, TBG_GOGU B
+        WHERE SILG_OFFICE = '01'
+            AND SILG_SITE = #{siteCode}
+            AND SILG_CHSU = #{chsu}
+            AND SILG_OFFICE = GOGU_OFFICE
+            AND SILG_SITE = GOGU_SITE
+            AND SILG_GOGU = GOGU_CODE
+        UNION ALL
+        SELECT DISTINCT SILG_GUBU || SILG_GOGU || SILG_LGOJ "id", SILG_GUBU || SILG_GOGU "pid", B.LGOJ_NAME "text", SILG_LGOJ CODE, 3 LEVEL_CD
+        FROM TBG_SGOJ A, TBG_LGOJ B
+        WHERE SILG_OFFICE = '01'
+            AND SILG_SITE = #{siteCode}
+            AND SILG_CHSU = #{chsu}
+            AND SILG_GUBU = B.LGOJ_GUBU
+            AND SILG_LGOJ = B.LGOJ_CODE
+        UNION ALL
+        SELECT SILG_GUBU || SILG_GOGU || SILG_LGOJ || SILG_MGOJ "id", SILG_GUBU || SILG_GOGU || SILG_LGOJ "pid", MGOJ_NAME "text", SILG_MGOJ NM, 4 LEVEL_CD
+        FROM TBG_SGOJ A, TBG_MGOJ B
+        WHERE SILG_OFFICE = '01'
+            AND SILG_SITE = #{siteCode}
+            AND SILG_CHSU = #{chsu}
+            AND SILG_GUBU = B.MGOJ_GUBU
+            AND SILG_LGOJ = B.MGOJ_LGOJ
+            AND SILG_MGOJ = B.MGOJ_CODE
+        ORDER BY "id"
+    </select>
+
+    <select id="selectAddGJ" parameterType="HashMap" resultType="HashMap">
+        SELECT GUBU_CODE "id", '0' "pid", GUBU_NAME "text", 1 LEVEL_CD,
+            GUBU_CODE CODE1, NULL CODE2, NULL CODE3,
+            GUBU_CODE || '.' || GUBU_NAME NAME1, NULL NAME2, NULL NAME3
+        FROM TBG_GUBU
+        UNION ALL
+        SELECT LGOJ_GUBU || LGOJ_CODE "id", LGOJ_GUBU "pid", LGOJ_NAME "text", 2 LEVEL_CD,
+            LGOJ_GUBU CODE1, LGOJ_CODE CODE2, NULL CODE3,
+            LGOJ_GUBU || '.' || B.GUBU_NAME NAME1, LGOJ_CODE || '.' || A.LGOJ_NAME NAME2, NULL NAME3
+        FROM TBG_LGOJ A, TBG_GUBU B
+        WHERE A.LGOJ_GUBU = B.GUBU_CODE
+        UNION ALL
+        SELECT MGOJ_GUBU || MGOJ_LGOJ || MGOJ_CODE "id", MGOJ_GUBU || MGOJ_LGOJ "pid", MGOJ_NAME "text", 3 LEVEL_CD,
+            MGOJ_GUBU CODE1, MGOJ_LGOJ CODE2, MGOJ_CODE CODE3,
+            MGOJ_GUBU || '.' || C.GUBU_NAME NAME1, MGOJ_LGOJ || '.' || B.LGOJ_NAME NAME2, MGOJ_CODE || '.' || A.MGOJ_NAME NAME3
+        FROM TBG_MGOJ A, TBG_LGOJ B, TBG_GUBU C
+        WHERE A.MGOJ_GUBU = C.GUBU_CODE
+        AND A.MGOJ_LGOJ = B.LGOJ_CODE
+        AND A.MGOJ_GUBU = B.LGOJ_GUBU
+        ORDER BY "id"
+    </select>
+
+    <select id="selectGogu" parameterType="HashMap" resultType="HashMap">
+        SELECT GOGU_SITE, GOGU_CODE, GOGU_CODE || '.' || GOGU_NAME GOGU_NAME
+        FROM TBG_GOGU
+        WHERE GOGU_OFFICE = '01'
+        AND GOGU_SITE = #{siteCode}
+        ORDER BY GOGU_CODE
+    </select>
+
+    <select id="selectAddItem" parameterType="HashMap" resultType="HashMap">
+        SELECT ITEM_CODE, ITEM_GUBU, ITEM_NAME, ITEM_SIZE, ITEM_UNIT, ITEM_MCODE, ITEM_ACT, NULL CHECKBOX
+        FROM TBG_ITEM
+        WHERE ITEM_GUBU = #{gubu}
+        <if test="input_itemName != null">
+            AND ITEM_NAME LIKE '%' || #{input_itemName} || '%'
+        </if>
+        ORDER BY ITEM_CODE
+    </select>
+
+    <select id="selectGubu" resultType="HashMap">
+        SELECT GUBU_CODE, GUBU_CODE || '. ' || GUBU_NAME AS GUBU_NAME, GUBU_GBN
+        FROM TBG_GUBU
+        ORDER BY GUBU_CODE
+    </select>
+
+    <select id="selectDivideItem" parameterType="HashMap" resultType="HashMap">
+        SELECT NUM, SILD_SITE, SILD_CHSU, SILD_GUBU, SILD_GOGU, SILD_LGOJ, SILD_MGOJ, SILD_ITEM, SILD_SIK,
+            DECODE(SIGN(5-NUM), 1, '도급', '실행') GUBUN,
+            DECODE(NUM, 1, '합계', 2, '재료비', 3, '노무비', 4, '경비', 5, '합계', 6, '재료비',
+                7, '노무비', 8, '외주재료비', 9, '외주노무비', 10, '외주경비', 11, '장비비', 12, '경비') BIMOK,
+            DECODE(NUM, 1, SILD_DQTY, 5, SILD_SQTY) QNTY,
+            DECODE(NUM, 1, SILD_DPRI, 2, SILD_DMPRI, 3, SILD_DLPRI, 4, SILD_DAPRI, 5, SILD_SPRI, 6, SILD_SMPRI,
+                7, SILD_SLPRI, 8, SILD_SOMPRI, 9, SILD_SOLPRI, 10, SILD_SOAPRI, 11, SILD_SEPRI, 12, SILD_SAPRI) PRI,
+            DECODE(NUM, 1, SILD_DAMT, 2, SILD_DMAMT, 3, SILD_DLAMT, 4, SILD_DAAMT, 5, SILD_SAMT, 6, SILD_SMAMT,
+                7, SILD_SLAMT, 8, SILD_SOMAMT, 9, SILD_SOLAMT, 10, SILD_SOAAMT, 11, SILD_SEAMT, 12, SILD_SAAMT) AMT,
+            DECODE(NUM, 1, SILD_DQTY, 5, SILD_SQTY) QNTY2,
+            DECODE(NUM, 1, SILD_DPRI, 2, SILD_DMPRI, 3, SILD_DLPRI, 4, SILD_DAPRI, 5, SILD_SPRI, 6, SILD_SMPRI,
+                7, SILD_SLPRI, 8, SILD_SOMPRI, 9, SILD_SOLPRI, 10, SILD_SOAPRI, 11, SILD_SEPRI, 12, SILD_SAPRI) PRI2,
+            DECODE(NUM, 1, SILD_DAMT, 2, SILD_DMAMT, 3, SILD_DLAMT, 4, SILD_DAAMT, 5, SILD_SAMT, 6, SILD_SMAMT,
+                7, SILD_SLAMT, 8, SILD_SOMAMT, 9, SILD_SOLAMT, 10, SILD_SOAAMT, 11, SILD_SEAMT, 12, SILD_SAAMT) AMT2,
+        NULL QNTY3, NULL PRI3, NULL AMT3
+        FROM TBG_SILD, (SELECT NUM FROM COPY_T WHERE NUM BETWEEN 1 AND 12)
+        WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{siteCode}
+            AND SILD_CHSU = #{chsu}
+            AND SILD_GUBU = #{gubu}
+            AND SILD_GOGU = #{gogu}
+            AND SILD_LGOJ = #{lgoj}
+            AND SILD_MGOJ = #{mgoj}
+            AND SILD_ITEM = #{item}
+    </select>
+
+    <update id="saveCategoryUpdateData1">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+            UPDATE TBG_SILD
+            SET 
+                SILD_NAME = #{item.SILD_NAME},
+                SILD_SIZE = #{item.SILD_SIZE},
+                SILD_UNIT = #{item.SILD_UNIT},
+                SILD_DQTY = NVL(#{item.SILD_DQTY}, 0),
+                SILD_DPRI = NVL(#{item.SILD_DPRI}, 0),
+                SILD_DAMT = NVL(#{item.SILD_DAMT}, 0),
+                SILD_SQTY = NVL(#{item.SILD_SQTY}, 0),
+                SILD_SPRI = NVL(#{item.SILD_SPRI}, 0),
+                SILD_SAMT = NVL(#{item.SILD_SAMT}, 0),
+                SILD_PQTY = NVL(#{item.SILD_PQTY}, 0),
+                SILD_SIK = #{item.SILD_SIK}
+            WHERE 
+                SILD_OFFICE = '01'
+                AND SILD_SITE = #{item.SILD_SITE}
+                AND SILD_CHSU = #{item.SILD_CHSU}
+                AND SILD_GUBU = #{item.SILD_GUBU}
+                AND SILD_GOGU = #{item.SILD_GOGU}
+                AND SILD_LGOJ = #{item.SILD_LGOJ}
+                AND SILD_MGOJ = #{item.SILD_MGOJ}
+                AND SILD_ITEM = #{item.SILD_ITEM}
+        </foreach>
+    </update>
+
+    <update id="saveCategoryUpdateData2">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE TBG_SILD
+        SET
+            <if test="item.NUM == 1">
+                SILD_DQTY = #{item.QNTY},
+                SILD_DPRI = #{item.PRI},
+                SILD_DAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 2">
+                SILD_DMPRI = #{item.PRI},
+                SILD_DMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 3">
+                SILD_DLPRI = #{item.PRI},
+                SILD_DLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 4">
+                SILD_DAPRI = #{item.PRI},
+                SILD_DAAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 5">
+                SILD_SQTY = #{item.QNTY},
+                SILD_SPRI = #{item.PRI},
+                SILD_SAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 6">
+                SILD_SMPRI = #{item.PRI},
+                SILD_SMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 7">
+                SILD_SLPRI = #{item.PRI},
+                SILD_SLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 8">
+                SILD_SOMPRI = #{item.PRI},
+                SILD_SOMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 9">
+                SILD_SOLPRI = #{item.PRI},
+                SILD_SOLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 10">
+                SILD_SOAPRI = #{item.PRI},
+                SILD_SOAAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 11">
+                SILD_SEPRI = #{item.PRI},
+                SILD_SEAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 12">
+                SILD_SAPRI = #{item.PRI},
+                SILD_SAAMT = #{item.AMT}
+            </if>
+        WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{item.SILD_SITE}
+            AND SILD_CHSU = #{item.SILD_CHSU}
+            AND SILD_GUBU = #{item.SILD_GUBU}
+            AND SILD_GOGU = #{item.SILD_GOGU}
+            AND SILD_LGOJ = #{item.SILD_LGOJ}
+            AND SILD_MGOJ = #{item.SILD_MGOJ}
+            AND SILD_ITEM = #{item.SILD_ITEM}
+        </foreach>
+    </update>
+
+    <update id="saveOriginalItems">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+        UPDATE TBG_SILD
+        SET
+            <if test="item.NUM == 1">
+                SILD_DQTY = #{item.QNTY2},
+                SILD_DPRI = #{item.PRI},
+                SILD_DAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 2">
+                SILD_DMPRI = #{item.PRI},
+                SILD_DMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 3">
+                SILD_DLPRI = #{item.PRI},
+                SILD_DLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 4">
+                SILD_DAPRI = #{item.PRI},
+                SILD_DAAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 5">
+                SILD_SQTY = #{item.QNTY2},
+                SILD_PQTY = SILD_PQTY - SILD_SQTY + #{item.QNTY2},
+                SILD_DPQTY = SILD_DPQTY - SILD_SQTY + #{item.QNTY2},
+                SILD_SPRI = #{item.PRI},
+                SILD_SAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 6">
+                SILD_SMPRI = #{item.PRI},
+                SILD_SMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 7">
+                SILD_SLPRI = #{item.PRI},
+                SILD_SLAMT = #{item.AMT}
+            </if>
+            <if  test="item.NUM == 8">
+                SILD_SOMPRI = #{item.PRI},
+                SILD_SOMAMT = #{item.AMT}
+            </if>
+            <if  test="item.NUM == 9">
+                SILD_SOLPRI = #{item.PRI},
+                SILD_SOLAMT = #{item.AMT}
+            </if>
+            <if  test="item.NUM == 10">
+                SILD_SOAPRI = #{item.PRI},
+                SILD_SOAAMT = #{item.AMT}
+            </if>
+            <if  test="item.NUM == 11">
+                SILD_SEPRI = #{item.PRI},
+                SILD_SEAMT = #{item.AMT}
+            </if>
+            <if  test="item.NUM == 12">
+                SILD_SAPRI = #{item.PRI},
+                SILD_SAAMT = #{item.AMT}
+            </if>
+        WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{item.SILD_SITE}
+            AND SILD_CHSU = #{item.SILD_CHSU}
+            AND SILD_GUBU = #{item.SILD_GUBU}
+            AND SILD_GOGU = #{item.SILD_GOGU}
+            AND SILD_LGOJ = #{item.SILD_LGOJ}
+            AND SILD_MGOJ = #{item.SILD_MGOJ}
+            AND SILD_ITEM = #{item.SILD_ITEM}
+        </foreach>
+    </update>
+
+    <update id="saveDivideItems">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+            UPDATE TBG_SILD
+            SET
+            <if test="item.NUM == 1">
+                SILD_DQTY = #{item.SILD_DQTY3},
+                SILD_DPRI = #{item.PRI},
+                SILD_DAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 2">
+                SILD_DMPRI = #{item.PRI},
+                SILD_DMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 3">
+                SILD_DLPRI = #{item.PRI},
+                SILD_DLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 4">
+                SILD_DAPRI = #{item.PRI},
+                SILD_DAAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 5">
+                SILD_SQTY = #{item.SILD_SQTY3},
+                SILD_SPRI = #{item.PRI},
+                SILD_SAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 6">
+                SILD_SMPRI = #{item.PRI},
+                SILD_SMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 7">
+                SILD_SLPRI = #{item.PRI},
+                SILD_SLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 8">
+                SILD_SOMPRI = #{item.PRI},
+                SILD_SOMAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 9">
+                SILD_SOLPRI = #{item.PRI},
+                SILD_SOLAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 10">
+                SILD_SOAPRI = #{item.PRI},
+                SILD_SOAAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 11">
+                SILD_SEPRI = #{item.PRI},
+                SILD_SEAMT = #{item.AMT}
+            </if>
+            <if test="item.NUM == 12">
+                SILD_SAPRI = #{item.PRI},
+                SILD_SAAMT = #{item.AMT}
+            </if>
+            WHERE SILD_OFFICE = '01'
+                AND SILD_SITE = #{item.SILD_SITE}
+                AND SILD_CHSU = #{item.SILD_CHSU}
+                AND SILD_GUBU = #{item.SILD_GUBU}
+                AND SILD_GOGU = #{item.SILD_GOGU}
+                AND SILD_LGOJ = #{item.SILD_LGOJ}
+                AND SILD_MGOJ = #{item.SILD_MGOJ}
+                AND SILD_ITEM = #{item.SILD_ITEM}
+        </foreach>
+    </update>
+
+    <insert id="insertAddGJ">
+    INSERT INTO TBG_SGOJ(SILG_OFFICE, SILG_SITE, SILG_CHSU, SILG_GUBU, SILG_GOGU, SILG_LGOJ, SILG_MGOJ)
+    VALUES ('01', #{siteCode}, #{chsu}, #{gubu}, #{gogu}, #{lgoj}, #{mgoj})
+    </insert>
+
+    <insert id="insertDivideItems">
+    INSERT INTO TBG_SILD
+    (
+        SILD_OFFICE, SILD_SITE, SILD_CHSU, SILD_GUBU, SILD_GOGU, SILD_LGOJ, SILD_MGOJ, SILD_ITEM, SILD_NAME, SILD_SIZE, SILD_UNIT
+    )
+    SELECT '01',
+            #{SILD_SITE},
+            #{SILD_CHSU},
+            #{SILD_GUBU},
+            #{SILD_GOGU},
+            #{SILD_LGOJ},
+            #{SILD_MGOJ}, 
+            #{SILD_ITEM},
+            #{SILD_NAME},
+            #{SILD_SIZE},
+            #{SILD_UNIT}
+    FROM DUAL
+    WHERE NOT EXISTS
+        (
+        SELECT 1 FROM TBG_SILD
+        WHERE SILD_OFFICE = '01'
+        AND SILD_SITE = #{SILD_SITE}
+        AND SILD_CHSU = #{SILD_CHSU}
+        AND SILD_GUBU = #{SILD_GUBU}
+        AND SILD_GOGU = #{SILD_GOGU}
+        AND SILD_LGOJ = #{SILD_LGOJ}
+        AND SILD_MGOJ = #{SILD_MGOJ}
+        AND SILD_ITEM = #{SILD_ITEM}
+        )
+    </insert>
+
+    <insert id="saveCategoryInsertData">
+    INSERT ALL
+        <foreach collection="insertList" item="item">
+            INTO TBG_SILD
+            (
+                SILD_OFFICE, SILD_SITE, SILD_CHSU, SILD_GUBU,
+                SILD_GOGU, SILD_LGOJ, SILD_MGOJ, SILD_ITEM,
+                SILD_NAME, SILD_SIZE, SILD_UNIT, SILD_PQTY,
+                SILD_DPQTY, SILD_SIK
+            )
+            VALUES
+            (
+                '01', #{item.SILD_SITE}, #{item.SILD_CHSU}, #{item.SILD_GUBU}, 
+                #{item.SILD_GOGU}, #{item.SILD_LGOJ}, #{item.SILD_MGOJ}, #{item.SILD_ITEM}, 
+                #{item.SILD_NAME}, #{item.SILD_SIZE}, #{item.SILD_UNIT}, #{item.SILD_PQTY}, 
+                #{item.SILD_DPQTY}, #{item.SILD_SIK} 
+            )
+        </foreach>
+    SELECT 1 FROM DUAL
+	</insert>
+
+    <delete id="saveCategoryDeleteData">
+    DELETE
+    FROM TBG_SILD
+        <where>
+            <foreach collection="deleteList" item="item" open="" close="" separator="OR">
+                (
+                    SILD_OFFICE = '01'
+                    AND SILD_SITE = #{item.SILD_SITE}
+                    AND SILD_CHSU = #{item.SILD_CHSU}
+                    AND SILD_GUBU = #{item.SILD_GUBU}
+                    AND SILD_GOGU = #{item.SILD_GOGU}
+                    AND SILD_LGOJ = #{item.SILD_LGOJ}
+                    AND SILD_MGOJ = #{item.SILD_MGOJ}
+                    AND SILD_ITEM = #{item.SILD_ITEM}
+                )
+            </foreach>
+        </where>
+	</delete>
+	
+	<insert id="addFiles">
+		INSERT ALL
+		<foreach collection="addFileParams" item="item">
+			INTO TBG_FILE 
+	    	( FILE_OFFICE, FILE_SITE, FILE_CHSU, FILE_GUBU, FILE_APPFILE, FILE_FILEPATH, FILE_SIZE, FILE_TYPE, FILE_EXT )
+	    	VALUES
+			(
+				'01',
+				#{item.extraParams.siteCode},
+				#{item.extraParams.chsu},
+				#{item.extraParams.gubu},
+				#{item.name},
+				#{item.hashedFileName},
+				#{item.size},
+				#{item.type},
+				#{item.ext}
+			)
+		</foreach>
+		SELECT 1 FROM DUAL
+	</insert>
+	
+	<delete id="deleteFiles">
+		DELETE
+		  FROM TBG_FILE
+		<where>
+			<foreach collection="deleteFileParams" item="item" open="" close="" separator="OR">
+			   ( FILE_OFFICE = '01' AND FILE_SITE = #{item.extraParams.siteCode} 
+			                        AND FILE_CHSU = #{item.extraParams.chsu}
+			                        AND FILE_GUBU = #{item.extraParams.gubu}
+			                        AND FILE_APPFILE = #{item.name} )
+	    	</foreach>
+		</where>
+	</delete>
+	
+</mapper>

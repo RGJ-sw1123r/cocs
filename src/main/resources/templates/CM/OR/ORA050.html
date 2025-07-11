@@ -1,0 +1,156 @@
+<script>
+    var dataGrid;
+    var SBGridProperties = {};
+    var gridData = [];
+
+    var selectJsonData1 = [
+    { text: "전체", value: "" },
+    { text: "서울", value: "서울" },
+    { text: "경기", value: "경기" },
+    { text: "인천", value: "인천" },
+    { text: "강원", value: "강원" },
+    { text: "대전", value: "대전" },
+    { text: "충북", value: "충북" },
+    { text: "충남", value: "충남" },
+    { text: "대구", value: "대구" },
+    { text: "경북", value: "경북" },
+    { text: "경남", value: "경남" },
+    { text: "부산", value: "부산" },
+    { text: "울산", value: "울산" },
+    { text: "광주", value: "광주" },
+    { text: "전북", value: "전북" },
+    { text: "전남", value: "전남" },
+    { text: "제주", value: "제주" },
+    ];
+
+    var selectJsonData2 = [
+    { text: "전체", value: "" },
+    { text: "사용", value: "1" },
+    { text: "미사용", value: "2" },
+    ];
+
+    // prettier-ignore
+    var treeJsonData = [
+    { id: "1", pid: "0", text: "A. 건축", value: "" },
+    { id: "2", pid: "0", text: "C. 토목", value: "" },
+    { id: "3", pid: "0", text: "E. 전기", value: "" },
+    { id: "4", pid: "0", text: "H. 하자", value: "" },
+    { id: "5", pid: "0", text: "J. 자재", value: "" },
+    { id: "6", pid: "0", text: "M. 설비", value: "" },
+    { id: "7", pid: "0", order: "7", text: "O. 공통", value: "" },
+    { id: "8", pid: "0", order: "8", text: "P. 조경", value: "" },
+    { id: "9", pid: "0", order: "9", text: "S. 안전", value: "" },
+    { id: "1_1", pid: "1", text: "A010. 파일항타공사", value: "" },
+    { id: "1_2", pid: "1", text: "A020. 철근콘크리트공사", value: "" },
+    { id: "1_3", pid: "1", text: "A030. 철골공사", value: "" },
+    { id: "1_4", pid: "1", text: "A040. 안전시설물공사", value: "" },
+    { id: "1_5", pid: "1", text: "A050. 내장목공사", value: "" },
+    { id: "1_6", pid: "1", text: "A060. 방수공사", value: "" },
+    { id: "2_1", pid: "2", text: "C010. 토공사", value: "" },
+    { id: "2_2", pid: "2", text: "C020. 기타 토목공사", value: "" },
+    { id: "3_1", pid: "3", text: "E010. 전기설비공사", value: "" },
+    { id: "4_1", pid: "4", text: "H010. 시설물유지관리", value: "" },
+    { id: "5_1", pid: "5", text: "J010. 욕실악세사리", value: "" },
+    { id: "6_1", pid: "6", text: "M010. 기계설비공사", value: "" },
+    { id: "7_1", pid: "7", text: "O010. 지하수개발공사", value: "" },
+    { id: "8_1", pid: "8", text: "P010. 조경공사", value: "" },
+    { id: "9_1", pid: "9", text: "S001. 111", value: "" },
+    ];
+
+    jQuery(document).ready(function () {
+    createGrid();
+    selectTree();
+    });
+
+    function createGrid() {
+        SBGridProperties = {};
+        SBGridProperties.parentid = "temp_grid1";
+        SBGridProperties.id = "temp_grid1";
+        SBGridProperties.jsonref = "temp_grid1";
+        SBGridProperties.rowheader = ["seq"];
+        SBGridProperties.height = "640px";
+        SBGridProperties.frozencols = 3;
+        // prettier-ignore
+        SBGridProperties.columns = [
+            { caption: [""], ref: "check", width: "30px", style: "text-align:center", type: "checkbox", typeinfo: { fixedcellcheckbox: { usemode: true }, ignoreupdate: true }, ignoreupdate: true },
+            { caption: ["사업자번호"], ref: "CUST_BSNO", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["업체명"], ref: "CUST_NAME", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["대표자"], ref: "CUST_OWNER", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["우편번호"], ref: "CUST_ZIP", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["주소"], ref: "CUST_ADDR", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["전화번호"], ref: "CUST_TEL", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["FAX번호"], ref: "CUST_FAX", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["시공능력 (단위:백만원)"], ref: "LICE_POWER0", width: "120px", style: "text-align:center", type: "input" },
+            { caption: ["비고"], ref: "CUST_BIGO", width: "120px", style: "text-align:center", type: "input" }
+        ];
+
+        temp_grid1 = _SBGrid.create(SBGridProperties);
+    }
+
+    function selectTree() {
+    $.get("/OR/ORA050/selectTree", function (data) {
+        console.log(data);
+        console.log(data.data);
+    });
+    }
+</script>
+<style>
+    /*content*/
+    .softbowl-tem-contents {
+    width: 100%;
+    height: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+    }
+    .flex-container {
+    display: flex;
+    margin-top: 10px;
+    }
+
+    .temp_tree1 {
+    flex: 3;
+    margin-right: 5px;
+    background-color: #ececec;
+    }
+
+    .temp_grid1 {
+    flex: 7;
+    margin-left: 5px;
+    }
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>협력업체등록명부</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        <div class="softbowl-form sortbox">
+            <tr>
+                <td>사업장지역</td>
+                <td>
+                    <sbux-select
+                        id="select_json1" name="select_json2" uitype="single"
+                        jsondata-ref="selectJsonData1" jsondata-text="text" jsondata-value="value">
+                    </sbux-select>
+                </td>
+                <td>사용여부</td>
+                <td>
+                    <sbux-select
+                        id="select_json2" name="select_json2" uitype="single"
+                        jsondata-ref="selectJsonData2" jsondata-text="text" jsondata-value="value">
+                    </sbux-select>
+                </td>
+            </tr>
+        </div>
+        <div class="flex-container">
+            <div class="temp_tree1">
+                <sbux-tree id="idxTree_json" name="tree_json" uitype="normal"
+                    jsondata-ref="treeJsonData">
+                </sbux-tree>
+            </div>
+        <div class="temp_grid1">
+            <div id="temp_grid1" style="width: 100%;"></div>
+        </div>
+    </div>
+</body>

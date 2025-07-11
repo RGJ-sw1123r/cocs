@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGE020_DAO">
+
+    <select id="selectGubu" resultType="HashMap">
+        SELECT GUBU_CODE, GUBU_NAME, GUBU_GBN
+        FROM TBG_GUBU
+        ORDER BY GUBU_CODE
+    </select>
+
+    <select id="selectResource" parameterType="HashMap" resultType="HashMap">
+        SELECT COMM_GBN, COMM_LCODE, COMM_LNAME
+        FROM TCT_COMM
+        WHERE COMM_OFFC = '01'
+        <!-- AND COMM_GBN = #{GBN} -->
+        AND COMM_LCODE <![CDATA[ <> ]]> '00'
+        AND COMM_MCODE = '00'
+        <!-- AND COMM_LNAME LIKE '%'|| #{LNAME} || '%' -->
+        ORDER BY COMM_GBN
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT ITEM_CODE, ITEM_GUBU, ITEM_NAME, ITEM_SIZE, ITEM_UNIT, ITEM_MCODE, ITEM_ACT,
+            ITEM_ACGBN, ITEM_EMS, ITEM_BEST, ITEM_RCODE, DECODE(A.SILD_ITEM, NULL, 'N', 'Y') USED
+        FROM TBG_ITEM, (SELECT DISTINCT SILD_ITEM FROM VBG_SILD) A
+        WHERE ITEM_CODE = A.SILD_ITEM(+)
+        AND ITEM_GUBU = #{GUBU}
+        <!-- AND ITEM_RCODE = #{ITEM_RCODE}
+        AND NVL(ITEM_NAME, ' ') LIKE '%' || #{ITEM_NAME} || '%'
+        AND NVL(ITEM_SIZE, ' ') LIKE '%' || #{ITEM_SIZE} || '%'
+        AND NVL(ITEM_CODE, ' ') LIKE '%' || #{ITEM_CODE} || '%' -->
+        ORDER BY ITEM_CODE
+    </select>
+</mapper>

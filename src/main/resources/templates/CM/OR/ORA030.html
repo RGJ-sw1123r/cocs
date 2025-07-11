@@ -1,0 +1,1047 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {}, grid_04: {}, 
+        grid_05: {}, grid_06: {}, grid_07: {},
+        gridData_01: [], gridData_02: [], gridData_03: [], gridData_04: [],
+        gridData_05: [], gridData_06: [], gridData_07: [],
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        CUST_BSNO: '',
+        selectedRow: '',
+        searchCondition: '',
+
+        tabJson: [
+            { id: '0', pid: '-1', order: '1', text: '일반정보', targetid: 'tab_01' },
+            { id: '1', pid: '-1', order: '2', text: '보유면허', targetid: 'tab_02' },
+            { id: '2', pid: '-1', order: '3', text: '계약가능공종', targetid: 'tab_03' },
+            { id: '3', pid: '-1', order: '4', text: '시공실적', targetid: 'tab_04' },
+            { id: '4', pid: '-1', order: '5', text: '포상', targetid: 'tab_05' },
+            { id: '5', pid: '-1', order: '6', text: '입찰이력관리', targetid: 'tab_06' },
+            { id: '6', pid: '-1', order: '7', text: '제재현황', targetid: 'tab_07' }
+        ],
+        CUST_GUBUNJson: [
+            { id: "1", text: "(1) 등록업체", value: "1" },
+            { id: "2", text: "(2) 가등록업체", value: "2" },
+            { id: "3", text: "(3) 미등록업체", value: "3" },
+        ],
+        USEJson: [
+            { id: "1", text: "(1) 사용", value: "1" },
+            { id: "2", text: "(2) 미사용", value: "2" },
+        ],
+
+        CUST_POSTJson: [   // 추후 DB 기준값과 통일할 것
+            { id: "1", text: "( 02) 서울특별시", value: "서울특별시" },
+            { id: "2", text: "(031) 경기도", value: "경기도" },
+            { id: "3", text: "(032) 인천광역시", value: "인천광역시" },
+            { id: "4", text: "(033) 강원도", value: "강원도" },
+            { id: "5", text: "(042) 대전광역시", value: "대전광역시" },
+            { id: "6", text: "(043) 충청북도", value: "충청북도" },
+            { id: "7", text: "(041) 충청남도", value: "충청남도" },
+            { id: "8", text: "(053) 대구광역시", value: "대구광역시" },
+            { id: "9", text: "(054) 경상북도", value: "경상북도" },
+            { id: "10", text: "(055) 경상남도", value: "경상남도" },
+            { id: "11", text: "(051) 부산광역시", value: "부산광역시" },
+            { id: "12", text: "(052) 울산광역시", value: "울산광역시" },
+            { id: "13", text: "(062) 광주광역시", value: "광주광역시" },
+            { id: "14", text: "(063) 전라북도", value: "전라북도" },
+            { id: "15", text: "(061) 전라남도", value: "전라남도" },
+            { id: "16", text: "(064) 제주도", value: "제주도" },
+        ],
+        postJson: [],
+        bankJson: [],
+        commJson: [],
+        gongJson: [],
+        constJson: [],
+
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+
+        saveGridData: (tabName) => {
+            console.log(tabName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(tabName);
+            var url = '/api/ORA030/' + tabName + '/gridData';
+            console.log(variables.datagridVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            var addData;
+            if (tabName === 'tab_01')
+                addData = {};
+
+            if (tabName === 'tab_02' && !sendData.LICE_BSNO)
+                addData = { 'LICE_BSNO': viewX.CUST_BSNO };
+
+            if (tabName === 'tab_03' && !sendData.COGO_BSNO)
+                addData = { 'COGO_BSNO': viewX.CUST_BSNO };
+
+            if (tabName === 'tab_04' && !sendData.SILD_BSNO)
+                addData = { 'SILD_BSNO': viewX.CUST_BSNO };
+
+            if (tabName === 'tab_05' && !sendData.ETCD_BSNO)
+                addData = { 'ETCD_BSNO': viewX.CUST_BSNO };
+
+            if (tabName === 'tab_07' && !sendData.REST_BSNO)
+                addData = { 'REST_BSNO': viewX.CUST_BSNO };
+
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try{
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                }catch(e){
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+					console.error(e);
+                }
+            };
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+
+        selectList: () => {
+            var CUST_GUBUN = $("#F_CUST_GUBUN").val();
+            if (!CUST_GUBUN)
+                CUST_GUBUN = '';
+
+            var CUST_POST = $("#F_CUST_POST").val();
+            if (!CUST_POST)
+                CUST_POST = '';
+
+            var CUST_NAME = $("#F_CUST_NAME").val();
+            if (!CUST_NAME)
+                CUST_NAME = '';
+
+            var searchCondition = {
+                CUST_GUBUN: CUST_GUBUN,
+                CUST_POST: CUST_POST,
+                CUST_NAME: CUST_NAME,
+                COMM_OFFC: '01'
+            };
+
+            console.log(searchCondition);
+
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/ORA030/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(()=>{
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+
+            exios.get('/api/ORA030/bankList').then((response) => {
+                viewX.bankJson = response.data;
+                SBUxMethod.refresh("CUST_BANK");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+
+            viewX.commList(searchCondition.COMM_OFFC);
+            viewX.gongList('');
+        },
+
+        loadGridData: (gridId, showAlert) => {
+            console.log(gridId);
+            if (gridId === 'tab_01') {
+                viewX.selectList();
+            } else {
+                viewX.getSelectedData();
+            }
+        },
+
+        getSelectedData: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+
+            console.log(sel_data);
+            console.log(sel_data.CUST_GUBUN);
+
+            console.log($("#CUST_BSNO").val());
+
+            var searchCondition = {
+                CUST_BSNO: sel_data.CUST_BSNO,
+                COMM_OFFC: '01'
+            };
+            exios.get('/api/ORA030/tab02Info', searchCondition).then((response) => {
+                viewX.gridData_02 = response.data;
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.clearStatus();
+                viewX.grid_02.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab03Info', searchCondition).then((response) => {
+                viewX.gridData_03 = response.data;
+                viewX.grid_03.setGridData(viewX.gridData_03, false);
+                viewX.grid_03.clearStatus();
+                viewX.grid_03.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab04Info', searchCondition).then((response) => {
+                viewX.gridData_04 = response.data;
+                viewX.grid_04.setGridData(viewX.gridData_04, false);
+                viewX.grid_04.clearStatus();
+                viewX.grid_04.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab05Info', searchCondition).then((response) => {
+                viewX.gridData_05 = response.data;
+                viewX.grid_05.setGridData(viewX.gridData_05, false);
+                viewX.grid_05.clearStatus();
+                viewX.grid_05.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab06Info', searchCondition).then((response) => {
+                viewX.gridData_06 = response.data;
+                viewX.grid_06.setGridData(viewX.gridData_06, false);
+                viewX.grid_06.clearStatus();
+                viewX.grid_06.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab07Info', searchCondition).then((response) => {
+                viewX.gridData_07 = response.data;
+                viewX.grid_07.setGridData(viewX.gridData_07, false);
+                viewX.grid_07.clearStatus();
+                viewX.grid_07.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+
+            viewX.commList(searchCondition.COMM_OFFC);
+            viewX.gongList('');
+
+            console.log(sel_data.CUST_BSNO);
+            viewX.CUST_BSNO = sel_data.CUST_BSNO;
+            console.log(viewX.CUST_BSNO);
+        },
+
+        getSelectedRowData: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            var searchCondition = {
+                CUST_BSNO: sel_data.CUST_BSNO,
+                COMM_OFFC: '01'
+            };
+            exios.get('/api/ORA030/tab02Info', searchCondition).then((response) => {
+                viewX.gridData_02 = response.data;
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.clearStatus();
+                viewX.grid_02.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab03Info', searchCondition).then((response) => {
+                viewX.gridData_03 = response.data;
+                viewX.grid_03.setGridData(viewX.gridData_03, false);
+                viewX.grid_03.clearStatus();
+                viewX.grid_03.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab04Info', searchCondition).then((response) => {
+                viewX.gridData_04 = response.data;
+                viewX.grid_04.setGridData(viewX.gridData_04, false);
+                viewX.grid_04.clearStatus();
+                viewX.grid_04.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab05Info', searchCondition).then((response) => {
+                viewX.gridData_05 = response.data;
+                viewX.grid_05.setGridData(viewX.gridData_05, false);
+                viewX.grid_05.clearStatus();
+                viewX.grid_05.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab06Info', searchCondition).then((response) => {
+                viewX.gridData_06 = response.data;
+                viewX.grid_06.setGridData(viewX.gridData_06, false);
+                viewX.grid_06.clearStatus();
+                viewX.grid_06.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            exios.get('/api/ORA030/tab07Info', searchCondition).then((response) => {
+                viewX.gridData_07 = response.data;
+                viewX.grid_07.setGridData(viewX.gridData_07, false);
+                viewX.grid_07.clearStatus();
+                viewX.grid_07.refresh({ 'focus': false });
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            viewX.CUST_BSNO = sel_data.CUST_BSNO;
+        },
+
+        commList: (COMM_OFFC) => {
+            exios.get('/api/ORA030/commList', { COMM_OFFC: COMM_OFFC }).then((response) => {
+                viewX.commJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh("CUST_KGBN");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+        gongList: (CUST_GONG) => {
+            console.log(CUST_GONG);
+            if (CUST_GONG === null)
+                CUST_GONG = '';
+            exios.get('/api/ORA030/gongList', { CUST_GONG: CUST_GONG }).then((response) => {
+                viewX.gongJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh("CUST_GONG");
+                SBUxMethod.refresh("CUST_PERM");
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+        },
+        permList: (CUST_PERM) => {
+            console.log(CUST_PERM);
+            console.log(viewX.gongJson[0])
+            var leng = viewX.gongJson.length;
+            for (let i = 0; i < leng; i++) {
+                if (viewX.gongJson[i].GONG_CODE === CUST_PERM) {
+                    $("#CUST_PERM").val(viewX.gongJson[i].PERM_CODE);
+                    break;
+                }
+            }
+        },
+        tabEvent: (tabName) => {
+            console.log(tabName);
+            switch (tabName) {
+                case 'tab_02':
+                    viewX.gongList('');
+                    exios.get('/api/ORA030/postList').then((response) => {
+                        viewX.postJson = response.data;
+                    }).then(() => {
+                        viewX.grid_02.setColumnComboData(12, viewX.postJson); // 콤보 동적으로 설정 시 필요
+                        viewX.grid_02.setColumnComboData(3, viewX.gongJson);
+                        viewX.grid_02.setGridData(viewX.gridData_02, false);
+                        viewX.grid_02.clearStatus();
+                        viewX.grid_02.refresh({ 'focus': false });
+                    });
+                    break;
+                case 'tab_03':
+                    viewX.grid_03.setColumnComboData(3, viewX.gongJson);
+                    viewX.grid_03.setGridData(viewX.gridData_03, false);
+                    viewX.grid_03.clearStatus();
+                    viewX.grid_03.refresh({ 'focus': false });
+                    break;
+                case 'tab_04':
+                    viewX.grid_04.setColumnComboData(5, viewX.gongJson);
+                    viewX.grid_04.setGridData(viewX.gridData_04, false);
+                    viewX.grid_04.clearStatus();
+                    viewX.grid_04.refresh({ 'focus': false });
+                    break;
+                case 'tab_05':
+                    viewX.grid_05.setGridData(viewX.gridData_05, false);
+                    viewX.grid_05.clearStatus();
+                    viewX.grid_05.refresh({ 'focus': false });
+                    break;
+                case 'tab_06':
+                    viewX.grid_06.setGridData(viewX.gridData_06, false);
+                    viewX.grid_06.clearStatus();
+                    viewX.grid_06.refresh({ 'focus': false });
+                    break;
+                case 'tab_07':
+                    viewX.grid_07.setGridData(viewX.gridData_07, false);
+                    viewX.grid_07.clearStatus();
+                    viewX.grid_07.refresh({ 'focus': false });
+            }
+        },
+        findAddr: (target) => {
+            new window.daum.Postcode({
+                oncomplete: (data)=> {
+                    const zipCode = data.zonecode
+                    const address = data.buildingName ? data.address + " (" + data.buildingName + ")" : data.address
+                    console.log(zipCode + " " + address);
+                    console.log(target.id);
+                    console.log(data);
+                    var col = viewX.grid_01.getColRef("CUST_ADDR1");
+                    console.log(viewX.selectedRow)
+                    if (target.id === "addrBt") {
+                        $("#addr1Num").val(zipCode);
+                        $("#CUST_ADDR1").val(address);
+                        viewX.grid_01.setRowStatus(viewX.grid_01.getSelectedRows()[0], 'update');
+                    } else {
+                        $("#addr2Num").val(zipCode);
+                        $("#CUST_JADDR1").val(address);
+                        viewX.grid_01.setRowStatus(viewX.grid_01.getSelectedRows()[0], 'update');
+                    }
+                }
+            }).open()
+        },
+    };
+
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                //본메뉴
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                height: '250',
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['사업자번호'], ref: 'CUST_BSNO', width: '300px', style: 'text-align:center', type: 'output' },
+                    { caption: ['업체명'], ref: 'CUST_NAME', width: '400px', style: 'text-align:center', type: 'input' },
+                    { caption: ['대표자'], ref: 'CUST_OWNER', width: '150px', style: 'text-align:center', type: 'input' },
+                    { caption: ['전화 번호'], ref: 'CUST_TEL', width: '150px', style: 'text-align:center', type: 'input' },
+                    { caption: ['FAX 번호'], ref: 'CUST_FAX', width: '150px', style: 'text-align:center', type: 'input' },
+                    { caption: ['이메일 주소'], ref: 'CUST_EMAIL', width: '200px', style: 'text-align:center', type: 'input' },
+                    { caption: ['담당자'], ref: 'CUST_MAN', width: '230px', style: 'text-align:center', type: 'input' },
+                    { caption: ['사업장 주소'], ref: 'CUST_ADDR1', type: 'input', hidden: true },
+                    { caption: ['사업장 상세주소'], ref: 'CUST_ADDR2', type: 'input', hidden: true },
+                    { caption: ['영업소 주소'], ref: 'CUST_JADDR1', type: 'input', hidden: true },
+                    { caption: ['영업소 상세주소'], ref: 'CUST_JADDR2', type: 'input', hidden: true },
+                    { caption: ['홈페이지'], ref: 'CUST_HPAGE', type: 'input', hidden: true },
+                    { caption: ['영업소 전화번호'], ref: 'CUST_JTEL', type: 'input', hidden: true },
+                    { caption: ['영업소 FAX번호'], ref: 'CUST_JFAX', type: 'input', hidden: true },
+                    { caption: ['신용평가'], ref: 'CUST_SNGP', type: 'input', hidden: true },
+                    { caption: ['핸드폰번호'], ref: 'CUST_HTEL', type: 'input', hidden: true },
+                    { caption: ['예금주'], ref: 'CUST_DEOWN', type: 'input', hidden: true },
+                    { caption: ['계좌번호'], ref: 'CUST_ACCNO', type: 'input', hidden: true },
+                    { caption: ['설립일자'], ref: 'CUST_BYY', type: 'output', hidden: true, },
+                    { caption: ['법인번호'], ref: 'CUST_SLNO', type: 'input', hidden: true },
+                    { caption: ['종목'], ref: 'CUST_ITEM', type: 'input', hidden: true },
+                    { caption: ['업태'], ref: 'CUST_TYPE', type: 'input', hidden: true },
+                    { caption: ['대표면허'], ref: 'CUST_PERM', type: 'input', hidden: true },
+                    { caption: ['비고'], ref: 'CUST_REM', type: 'input', hidden: true },
+                    { caption: ['사용여부'], ref: 'CUST_USE', type: 'input', hidden: true },
+                    { caption: ['거래은행'], ref: 'CUST_BANK', type: 'input', hidden: true },
+                    { caption: ['등록공종'], ref: 'CUST_GONG', type: 'input', hidden: true },
+                    { caption: ['등록경위'], ref: 'CUST_COURSE', type: 'input', hidden: true },
+                    { caption: ['우수협력업체'], ref: 'CUST_BESTCO', type: 'input', hidden: true },
+                    { caption: ['업체구분'], ref: 'CUST_GUBUN', type: 'input', hidden: true },
+                    { caption: ['기술구분'], ref: 'CUST_KGBN', type: 'input', hidden: true },
+                ],
+                custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                primarykey: ['CUST_BSNO'],
+            },
+            tab_02: {
+                //보유면허 탭
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '20',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['면허명', '면허명'], ref: 'LICE_PERM', width: '300px', style: 'text-align:center', type: 'combo', typeinfo: { ref: 'viewX.gongJson', displayui: true, label: 'PERM_NAME', value: 'PERM_CODE' } },
+                    { caption: ['면허 번호', '면허 번호'], ref: 'LICE_PERMNO', width: '160px', style: 'text-align:center', type: 'input' },
+                    { caption: ['면허취득일', '면허취득일'], ref: 'LICE_YMD', width: '160px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['시공능력', '전년'], ref: 'LICE_POWER0', width: '150px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['시공능력', '당년'], ref: 'LICE_POWER', width: '150px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['지역순위', '순위'], ref: 'LICE_RANK1', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['지역순위', '전체'], ref: 'LICE_RANK2', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['전국순위', '순위'], ref: 'LICE_RANK3', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['전국순위', '전체'], ref: 'LICE_RANK4', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['지역명', '지역명'], ref: 'LICE_AREA', width: '150px', style: 'text-align:center', type: 'combo', typeinfo: { ref: 'viewX.postJson', displayui: true, label: 'AREA_NAMES', value: 'AREA_CODE' } },
+                    { caption: ['업체경력(년)', '업체경력(년)'], ref: 'LICE_CAREER', width: '150px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                primarykey: ['LICE_PERMNO'],
+            },
+
+            tab_03: {
+                //계약가능공종 탭
+                parentid: 'SBGridArea_03',
+                id: 'viewX.grid_03',
+                jsonref: 'viewX.gridData_03',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['공종'], ref: 'COGO_GONG', width: '400px', style: 'text-align:center', type: 'combo', typeinfo: { ref: 'viewX.gongJson', displayui: true, label: 'GONG_NAME', value: 'GONG_CODE' } },
+                    { caption: ['계약 대표자명'], ref: 'COGO_OWNR', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['등록일자'], ref: 'COGO_REGDT', width: '300px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['구분'], ref: 'COGO_GBN', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'INSUR_WCUST', width: '450px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                primarykey: [''],
+            },
+
+            tab_04: {
+                //시공실적 탭
+                parentid: 'SBGridArea_04',
+                id: 'viewX.grid_04',
+                jsonref: 'viewX.gridData_04',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['건설사'], ref: 'SILD_OWNR', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['공사명'], ref: 'SILD_CONNM', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['면허명'], ref: 'SILD_PERM', width: '300px', style: 'text-align:center', type: 'combo', typeinfo: { ref: 'viewX.gongJson', displayui: true, label: 'PERM_NAME', value: 'PERM_CODE' } },
+                    { caption: ['기성금액'], ref: 'SILD_CONTAMT', width: '300px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['기성년도'], ref: 'SILD_YEAR', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'INSUR_WCUST', width: '130px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                primarykey: ['SILD_BSNO'],
+            },
+
+            tab_05: {
+                //포상 탭
+                parentid: 'SBGridArea_05',
+                id: 'viewX.grid_05',
+                jsonref: 'viewX.gridData_05',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['수여기관'], ref: 'ETCD_POWNER', width: '500px', style: 'text-align:center', type: 'input' },
+                    { caption: ['포상명'], ref: 'ETCD_PNAME', width: '500px', style: 'text-align:center', type: 'input' },
+                    { caption: ['포상년도'], ref: 'ETCD_PYEAR', width: '310px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'INSUR_WCUST', width: '320px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                primarykey: ['ETCD_BSNO'],
+            },
+
+            tab_06: {
+                //입찰이력관리 탭(read only)
+                parentid: 'SBGridArea_06',
+                id: 'viewX.grid_06',
+                jsonref: 'viewX.gridData_06',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectabtmode: 'free',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                disabled: true,
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['입찰년도'], ref: 'HIST_YMD_YYYY', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['월일'], ref: 'HIST_YMD_MMDD', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['현장명'], ref: 'HIST_SITE', width: '200px', style: 'text-align:center', type: 'input' },
+                    { caption: ['공사명'], ref: 'ORDR_NAME', width: '200px', style: 'text-align:center', type: 'input' },
+                    { caption: ['도급금액'], ref: 'HIST_DOAMT', width: '200px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['실행금액'], ref: 'HIST_SILAMT', width: '200px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['입찰금액'], ref: 'HIST_ESTAMT', width: '200px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['계약금액'], ref: 'HIST_CONTAMT', width: '200px', style: 'text-align:center', type: 'input', format: { type: 'number', rule: '#,###', origin: '####' } },
+                    { caption: ['순위'], ref: 'HIST_RANK', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'HIST_REM', width: '200px', style: 'text-align:center', type: 'input' },
+                    { caption: ['기술구분'], ref: 'CUST_KGBN', width: '200px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: [],
+                primarykey: ['HIST_BSNO'],
+            },
+
+            tab_07: {
+                //제재현황 탭
+                parentid: 'SBGridArea_07',
+                id: 'viewX.grid_07',
+                jsonref: 'viewX.gridData_07',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+
+
+                columns: [
+                    { caption: '', ref: 'check', width: '20px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['제재일자'], ref: 'REST_YMD', width: '300px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['제재내용'], ref: 'REST_DESC', width: '600px', style: 'text-align:center', type: 'input' },
+                    { caption: ['제재기관'], ref: 'REST_ORG', width: '300px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'REST_BIGO', width: '420px', style: 'text-align:center', type: 'input' },
+                ],
+                custompanel: ['refresh', 'add', 'delete', 'save'],
+                primarykey: ['REST_BSNO'],
+            },
+        }
+
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+        viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_03);
+        viewX.grid_04 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_04);
+        viewX.grid_05 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_05);
+        viewX.grid_06 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_06);
+        viewX.grid_07 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_07);
+
+        viewX.grid_01.bind('click', 'viewX.getSelectedData');
+        viewX.grid_01.bind('keyup', 'viewX.getSelectedRowData');
+        viewX.grid_01.bind('keydown', 'viewX.getSelectedRowData');
+        viewX.selectList();
+    });
+</script>
+<!--<style>
+
+    div {
+        padding: 0;
+        margin: 0;
+    }
+
+    /*header*/
+    .softbowl-tem-header {
+        display: table;
+        width: 100%;
+        height: 5%;
+        padding: 10px;
+        background: #386ec7;
+        box-sizing: border-box;
+    }
+
+    .softbowl-tem-header h3 {
+        display: table-cell;
+        color: #fff;
+    }
+
+    .softbowl-form {
+        margin-left: 10px;
+    }
+
+    .softbowl-grid {
+        margin-left: 20px;
+    }
+
+    #selectList {
+        width: 60px;
+        height: 30px;
+        background-color: #E1EAF2;
+        text-align: center;
+        margin-left: 20px;
+        font-size: 15px;
+        color: #0E3979;
+        font-weight: bold;
+    }
+
+    .sbt-select+span {
+        margin-left: 30px;
+    }
+
+    #selectList:hover {
+        background-color: #C5DCF0;
+    }
+
+    #text {
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    #searchEcodeName {
+        display: flex;
+        align-items: center;
+        /* 수직 정렬 */
+    }
+
+    .sbt-select {
+        margin-left: 40px;
+        /* sbt-select 사이의 여백 설정 */
+    }
+
+    .sbt-tab-wrap {
+        display: flex;
+        align-items: center;
+        margin: 10px;
+    }
+
+    /* table {
+        border-collapse: separate;
+        border-spacing: 20px;
+
+        height: 20px;
+    } */
+
+    #inner-text {
+        font-size: 15px;
+        font-weight: bold;
+        margin-left: 30px;
+        margin-right: 30px;
+    }
+
+    .inner-div {
+        display: flex;
+        margin-top: 0px;
+        margin-bottom: 3px;
+    }
+
+    #spt-line {
+        margin-bottom: 15px;
+    }
+</style>-->
+<body>
+    <!-- 2310 : 디자인 가이드 - 검색어 : 'DNS' -->
+    <!-- <div class="con_wrap color_v1"> 감싸는 div 추가함 : index.html 공통으로 빠짐 -->
+        <div class="menuPath-wrap">
+            <h3>협력업체 등록정보</h3><!-- DNS: 제목 추가 -->
+            <div class="menuPath-title"></div>
+        </div>
+        <div class="softbowl-tem-contents">
+            <div class="softbowl-form sortbox"><!-- DNS - 검색박스에 .sortbox 추가 -->
+                <!-- DNS - 조회박스 div.sortbox_inner ul.sortitem li + div.sort_btn 형태 -->
+                <div class="sortbox_inner">
+                    <ul class="sortitem">
+                        <li>
+                            <span id="text">업체구분</span><!-- ':' 삭제' -->
+                            <sbux-select id="F_CUST_GUBUN" name="F_CUST_GUBUN" uitype="single" jsondata-ref="viewX.CUST_GUBUNJson"
+                                jsondata-text="text" jsondata-value="value" auto-unselected-text="true"
+                                unselected-text="전체" wrap-class="sbt-select" /></sbux-select>
+                        </li>
+                        <li>
+                            <span id="text">사업장 지역</span>
+                            <sbux-select id="F_CUST_POST" name="F_CUST_POST" uitype="single" jsondata-ref="viewX.CUST_POSTJson"
+                                jsondata-text="text" jsondata-value="value" style="width:150px;" auto-unselected-text="true"
+                                unselected-text="전체" wrap-class="sbt-select"></sbux-select>
+                        </li>
+                        <li>
+                            <span id="text">업체명</span>
+                            <sbux-input id="F_CUST_NAME" name="F_CUST_NAME" uitype="text" placeholder="검색할 업체명을 입력하세요" style="width:200px;"
+                                minlength="0" maxlength="15" wrap-class="sbt-select"></sbux-input>
+                        </li>
+                    </ul>
+                    <!-- 버튼 -->
+                    <div class="sort_btn">
+                        <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run" onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+                        <!-- DNS: 실행버튼 클래스 추가 .btn_run -->
+                    </div>
+                    <!-- //버튼 -->
+                </div>
+                <!-- //DNS: div.sortbox_inner ul.sortitem-li 형태로 변경 -->
+            </div>
+            <div class="softbowl-grid">
+                <div>
+                    <!-- 테이블리스트 영역 -->
+                    <div id="SBGridArea"></div>
+
+                    <!--탭 입력 영역-->
+                    <div class="sbt-input-tab cocs-tabbox"> <!-- DNS: 탭 유형 클래스 추가 .cocs-tabbox -->
+
+                        <!-- SBUx tab 컴포넌트 -->
+                        <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" is-scrollable="false"
+                            jsondata-ref="viewX.tabJson"
+                            title-target-id-array="tab_01^tab_02^tab_03^tab_04^tab_05^tab_06^tab_07"
+                            title-text-array="tab_01^tab_02^tab_03^tab_04^tab_05^tab_06^tab_07" is-close-icon="false"
+                            onclick="viewX.tabEvent(tab_norm)"></sbux-tabs>
+                        <div class="tab-content">
+                            <!-- 일반정보 -->
+                            <div id="tab_01" class="formsheet"> <!-- DNS: 탭 양식 클래스 추가 .formsheet -->
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <!-- DNS: 입력항목 중 필수/선택 항목이 있을 때 알려주는 라벨 -->
+                                        <p class="ntc_initial">
+                                            <span>필수 입력 항목</span>
+                                        </p>
+                                        <!-- DNS: 입력항목 중 필수/선택 항목이 있을 때 알려주는 라벨 -->
+                                        <div id="SBGridArea_01">
+                                            <!-- DNS: 폼 항목 구조 변경. ul.ipt_line 당 1라인 -->
+                                            <ul class="ipt_line">
+                                                <li class="initial">
+                                                    <label for="CUST_BSNO" class="inner-text">사업자번호</label><!-- DNS: 각 항목의 제목 span > label 변경 -->
+                                                    <sbux-input id="CUST_BSNO" name="CUST_BSNO" uitype="text" placeholder="사업자번호 입력" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" icon-glyphs="glyphicon-pencil" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_NAME" class="inner-text">업체명</label>
+                                                    <sbux-input id="CUST_NAME" name="CUST_NAME" uitype="text" placeholder="업체명" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_OWNER" class="inner-text">대표자</label>
+                                                    <sbux-input id="CUST_OWNER" name="CUST_OWNER" uitype="text" placeholder="대표자" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_TYPE" class="inner-text">업태</label>
+                                                    <sbux-input id="CUST_TYPE" name="CUST_TYPE" uitype="text" placeholder="업태" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_KGBN" class="inner-text">기술구분</label>
+                                                    <sbux-select id="CUST_KGBN" name="CUST_KGBN" uitype="single" grid-id="viewX.grid_01"
+                                                        jsondata-ref="viewX.commJson" jsondata-text="COMM_LNAME" jsondata-value="COMM_LCODE"
+                                                        auto-unselected-text="true" wrap-class="sbt-inner-select"
+                                                        onclick="viewX.gongList(CUST_KGBN)" /></sbux-select>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_GONG" class="inner-text">등록공종</label>
+                                                    <sbux-select id="CUST_GONG" name="CUST_GONG" uitype="single" jsondata-ref="viewX.gongJson"
+                                                        jsondata-text="GONG_NAME" grid-id="viewX.grid_01" jsondata-value="GONG_CODE" auto-unselected-text="true"
+                                                        wrap-class="sbt-inner-select" onclick="viewX.permList(CUST_GONG)" /></sbux-select>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_PERM" class="inner-text">대표면허</label>
+                                                    <sbux-select id="CUST_PERM" name="CUST_PERM" uitype="single" jsondata-ref="viewX.gongJson"
+                                                        jsondata-text="PERM_NAME" grid-id="viewX.grid_01" jsondata-value="PERM_CODE" auto-unselected-text="true"
+                                                        wrap-class="sbt-inner-select" required no-data-text="불러올 데이터가 없습니다." /></sbux-select>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_ITEM" class="inner-text">종목</label>
+                                                    <sbux-input id="CUST_ITEM" name="CUST_ITEM" uitype="text" placeholder="종목" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_SLNO" class="inner-text">법인번호</label>
+                                                    <sbux-input id="CUST_SLNO" name="CUST_SLNO" uitype="text" placeholder="법인번호" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" disabled="true" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_TEL" class="inner-text">전화번호</label>
+                                                    <sbux-input id="CUST_TEL" name="CUST_TEL" uitype="text" placeholder="전화번호" minlength="0" maxlength="15"
+                                                        auto-fill-phone-dashes="true" wrap-class="sbt-select" permit-keycodes-set="number"
+                                                        grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_FAX" class="inner-text">FAX번호</label>
+                                                    <sbux-input id="CUST_FAX" name="CUST_FAX" uitype="text" placeholder="FAX번호" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" permit-keycodes-set="number" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_COURSE" class="inner-text">등록경위</label>
+                                                    <sbux-input id="CUST_COURSE" name="CUST_COURSE" uitype="text" placeholder="등록경위" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_BYY" class="inner-text">설립일자</label>
+                                                    <sbux-datepicker id="CUST_BYY" name="CUST_BYY" uitype="popup" grid-id="viewX.grid_01"></sbux-datepicker>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_BANK" class="inner-text">거래은행</label>
+                                                    <sbux-select id="CUST_BANK" name="CUST_BANK" uitype="single" jsondata-ref="viewX.bankJson"
+                                                        jsondata-text="GITAA_NM" grid-id="viewX.grid_01" jsondata-value="GITAA_CD" auto-unselected-text="true"
+                                                        wrap-class="sbt-inner-select" no-data-text="불러올 데이터가 없습니다." /></sbux-select>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_ACCNO" class="inner-text">계좌번호</label>
+                                                    <sbux-input id="CUST_ACCNO" name="CUST_ACCNO" uitype="text" placeholder="계좌번호" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select" permit-keycodes-set="number"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_DEOWN" class="inner-text">예금주</label>
+                                                    <sbux-input id="CUST_DEOWN" name="CUST_DEOWN" uitype="text" placeholder="예금주" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_HTEL" class="inner-text">핸드폰번호</label>
+                                                    <sbux-input id="CUST_HTEL" name="CUST_HTEL" uitype="text" placeholder="핸드폰번호" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" auto-fill-phone-dashes="true" permit-keycodes-set="number"
+                                                        wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li class="noblt col-check"><!-- DNS: 이전 항목에 이어져 불렛이 없는 경우 클래스 추가 .noblt -->
+                                                    <sbux-checkbox id="idxChkbox_norm_1" name="chkbox_norm.red" uitype="normal" text="SMS 수신 여부"
+                                                    text-left-padding="5px" text-right-padding="25px" true-value="YES" false-value="NO" required></sbux-checkbox>
+                                                </li>
+                                                <li class="noblt">&nbsp;</li>
+                                                <li class="noblt">&nbsp;</li>
+                                            </ul>
+                                            <hr>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="addr1Num" class="inner-text">사업장주소</label>
+                                                    <sbux-input id="addr1Num" name="addr1Num" uitype="text" placeholder="우편번호" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select"></sbux-input>
+                                                    <button type="button" id="addrBt" class="btn btn-default btn-sm"
+                                                        onclick="viewX.findAddr(addrBt)">
+                                                    <span class="glyphicon glyphicon-search"></span>
+                                                </li>
+                                                <li class="noblt">
+                                                    <sbux-input id="CUST_ADDR1" name="CUST_ADDR1" uitype="text" placeholder="주소" minlength="0"
+                                                    grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                    
+                                                </li>
+                                                <li class="noblt">
+                                                    <sbux-input id="CUST_ADDR2" name="CUST_ADDR2" uitype="text" placeholder="상세주소" minlength="0"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_MAN" class="inner-text">등록자</label>
+                                                    <sbux-input id="CUST_MAN" name="CUST_MAN" uitype="text" placeholder="담당자" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="addr2Num" class="inner-text">영업소주소</label>
+                                                    <sbux-input id="addr2Num" name="addr2Num" uitype="text" placeholder="우편번호" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select"></sbux-input>
+                                                    <button type="button" id="addr2Bt" class="btn btn-default btn-sm" onclick="viewX.findAddr(addr2Bt)">
+                                                        <span class="glyphicon glyphicon-search"></span>
+                                                    </button>
+                                                </li>
+                                                <li class="noblt">
+                                                    <sbux-input id="CUST_JADDR1" name="CUST_JADDR1" uitype="text" placeholder="주소" minlength="0"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li class="noblt">
+                                                    <sbux-input id="CUST_JADDR2" name="CUST_JADDR2" uitype="text" placeholder="상세주소" minlength="0"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select">
+                                                    </sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="ora-01" class="inner-text">등록자</label>
+                                                    <sbux-input id="ora-01" name="input_text" uitype="text" placeholder="등록자" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_JTEL" class="inner-text">영업소<br>전화번호</label>
+                                                    <sbux-input id="CUST_JTEL" name="CUST_JTEL" uitype="text" placeholder="전화번호" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_JFAX" class="inner-text">영업소<br>FAX번호</label>
+                                                    <sbux-input id="CUST_JFAX" name="CUST_JFAX" uitype="text" placeholder="FAX번호" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_EMAIL" class="inner-text">이메일</label>
+                                                    <sbux-input id="CUST_EMAIL" name="CUST_EMAIL" uitype="text" placeholder="EMAIL" minlength="0" maxlength="15"
+                                                        wrap-class="sbt-select" grid-id="viewX.grid_01"></sbux-input>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_HPAGE" class="inner-text">홈페이지</label>
+                                                    <sbux-input id="CUST_HPAGE" name="CUST_HPAGE" uitype="text" placeholder="HOMEPAGE" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <ul class="ipt_line">
+                                                <li>
+                                                    <label for="CUST_GUBUN" class="inner-text">업체구분</label>
+                                                    <sbux-select id="CUST_GUBUN" name="CUST_GUBUN" uitype="single" jsondata-ref="viewX.CUST_GUBUNJson"
+                                                        jsondata-text="text" grid-id="viewX.grid_01" jsondata-value="value" auto-unselected-text="true"
+                                                        wrap-class="sbt-inner-select" no-data-text="불러올 데이터가 없습니다." /></sbux-select>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_USE" class="inner-text">사용여부</label>
+                                                    <sbux-select id="CUST_USE" name="CUST_USE" uitype="single" jsondata-ref="viewX.USEJson" jsondata-text="text"
+                                                        grid-id="viewX.grid_01" jsondata-value="value" auto-unselected-text="true" wrap-class="sbt-inner-select"
+                                                        no-data-text="불러올 데이터가 없습니다." /></sbux-select>
+                                                </li>
+                                                <li class="noblt col-check">
+                                                    <sbux-checkbox id="CUST_BESTCO" name="CUST_BESTCO" uitype="normal" text="우수협력업체" text-left-padding="5px"
+                                                        text-right-padding="25px" true-value="1" false-value="0" grid-id="viewX.grid_01" required></sbux-checkbox>
+                                                </li>
+                                                <li>
+                                                    <label for="CUST_SNGP" class="inner-text">신용평가</label>
+                                                    <sbux-input id="CUST_SNGP" name="CUST_SNGP" uitype="text" placeholder="신용평가" minlength="0" maxlength="15"
+                                                        grid-id="viewX.grid_01" wrap-class="sbt-select"></sbux-input>
+                                                </li>
+                                            </ul>
+                                            <hr>
+                                            <ul class="ipt_line">
+                                                <li class="col_merge4">
+                                                    <label for="CUST_REM" class="inner-text">비고</label>
+                                                    <div>
+                                                        <sbux-textarea id="CUST_REM" name="CUST_REM" uitype="normal" grid-id="viewX.grid_01" class=""></sbux-textarea>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 보유면허 -->
+                            <div id="tab_02">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_02" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 계약가능 공종-->
+                            <div id="tab_03">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_03" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 시공실적-->
+                            <div id="tab_04">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_04" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 포상-->
+                            <div id="tab_05">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_05" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 입찰이력관리-->
+                            <div id="tab_06">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_06" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 제재현황-->
+                            <div id="tab_07">
+                                <div class="sbt-tab-wrap">
+                                    <div class="sbt-grid">
+                                        <div id="SBGridArea_07" style="height: 460px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 2310 : 디자인 가이드 -->
+</body>

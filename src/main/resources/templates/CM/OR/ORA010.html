@@ -1,0 +1,282 @@
+<script>
+    var viewX = {
+        grid_01: {},
+		gridData_01: {},
+        yearJson: [],
+        selectYear: function () {
+            // 레거시 DB와 달리 To-Be DB에 관련 데이터 없음
+            // exios.get('/api/ORA010/selectYear').then((response) => {
+            //     viewX.yearJson = response.data;
+            //     SBUxMethod.refresh('select_year');
+            // });
+        },
+        selectGrid: function () {
+        },
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                explorerbar: 'sort',
+                selectmode: 'byrow',
+                primarykey: [''],
+                custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                columns: [
+                    { caption: ['사업자번호'], ref: 'BASE_BSNO', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['업체명'], ref: 'BASE_NAME', width: '180px', style: 'text-align:left', type: 'input' },
+                    { caption: ['평가년도'], ref: 'BASE_YEAR', width: '90px', style: 'text-align:left', type: 'input', hidden: true },
+                    { caption: ['평가년도'], ref: 'BASE_YEAR2', width: '90px', style: 'text-align:left', type: 'input', hidden: true },
+                    
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectYear();
+    })
+</script>
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #tableArea {
+        margin-left: 10px;
+    }
+
+    #tableArea table {
+        /* border: 2px solid #c2c2c2; */
+        background-color: whitesmoke;
+        padding: 10px;
+    }
+
+    #tableArea table td {
+        padding: 5px;
+    }   
+
+    #input_siteName {
+        margin-right: 80px;
+    }
+
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>신규업체평가</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        업체명
+        <sbux-input id="input_name" name="input_name" uitype="text" style="width: 300px;"
+            onkeyenter="viewX.input_name(input_name)"></sbux-input>
+        기준년도
+        <sbux-select id="select_year" name="select_year" uitype="single"
+            jsondata-ref="viewX.yearJson"
+            jsondata-text=""
+            jsondata-value=""
+            onchange="">
+        </sbux-select>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+        <div id="tableArea">
+            <table>
+                <tr>
+                    <td>사업자번호</td>
+                    <td>기술구분
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>대표자명
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>대표면허
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>업체명
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>등록공종
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <tr>
+                        <td colspan="3"><hr style="border: 1px solid #c2c2c2;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><b>1. 기술구분</b></td>
+                    </tr>
+                    <td>공사실적
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                    <td>도급순위
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>기술자보유
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                    <td>대표자경영
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <tr>
+                        <td colspan="3"><hr style="border: 1px solid #c2c2c2;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><b>2. 재무부문</b></td>
+                    </tr>
+                    <td>자본금
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>부채총계
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>자기자본
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>유동자산
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>유동부채
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>당기순익<sbux-input id="" name="" uitype="text"
+                        onkeyenter="">
+                    </sbux-input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>매출액
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                    <td>총자본
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                </tr>
+                <tr>
+                    <tr>
+                        <td colspan="3"><hr style="border: 1px solid #c2c2c2;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><b>3. 품질부문</b></td>
+                    </tr>
+                    <td>ISO인증
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                    <td>회사연혁
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                    <td>원천사의존도
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <tr>
+                        <td colspan="3"><hr style="border: 1px solid #c2c2c2;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><b>4. 가감</b></td>
+                    </tr>
+                    <td>협회 및 정부기관 표창
+                        <sbux-select id="" name="" uitype="single"
+                            jsondata-ref="viewX."
+                            jsondata-text=""
+                            jsondata-value=""
+                            onchange="">
+                        </sbux-select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>평가자</td>
+                    <td>평가일
+                        <sbux-input id="" name="" uitype="text"
+                            onkeyenter="">
+                        </sbux-input>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>

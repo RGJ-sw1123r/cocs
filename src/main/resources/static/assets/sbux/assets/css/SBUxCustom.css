@@ -1,0 +1,24 @@
+/*select*/
+.sbux-sel.sbux-sel-focus {
+  border: 1px solid #307ea5;
+}
+.sbux-sel.sbux-sel-required {
+  border: 1px solid #307ea5;
+}
+.sbux-sel-chk a.sbux-sel.sbux-sel-focus {
+  border: 1px solid #307ea5;
+}
+.sbux-sel-chk a.sbux-sel.sbux-sel-required {
+  border: 1px solid #307ea5;
+}
+.sbux-sel-form .sbux-sel-form-wrap.sbux-sel-required {
+  border: 1px solid #307ea5;
+}
+.sbux-sel-form .sbux-sel-form-wrap.sbux-sel-focus {
+  border: 1px solid #307ea5;
+}
+/*textarea*/
+.sb-textarea.sbux-txa-focus,
+.sbux-txa.sbux-txa-focus {
+  border: 1px solid #307ea5;
+}

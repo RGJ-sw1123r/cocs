@@ -1,0 +1,107 @@
+<script>
+    var viewX = {
+      grid_01: {},
+      gridData_01: {},
+      selectGrid: function () {
+        exios.get('/api/BGA040/selectGrid').then((response) => {
+          viewX.gridData_01 = response.data;
+          viewX.grid_01.setGridData(viewX.gridData_01, false);
+          viewX.grid_01.refresh({'focus': false});
+          viewX.grid_01.setColDisabled(4, true);
+          viewX.grid_01.setRow(1);
+          viewX.renamingComp();
+        }).catch((e) => {
+          console.error(e.responseText);
+        })
+      },
+      renamingComp: function () {
+        var nRow = viewX.grid_01.getRow();
+        var nRowData = viewX.grid_01.getRowData(nRow);
+        if (nRowData.INFO_COMP === "1") {
+          SBUxMethod.set('button_comp', '확정취소');
+        } else {
+          SBUxMethod.set('button_comp', '확정');
+        }
+      },
+      button_compClick: function () {
+        // alert: is-confirm 속성 추가 이후 확인/취소 예정
+        var nRow = viewX.grid_01.getRow();
+        var nRowData = viewX.grid_01.getRowData(nRow);
+
+        function updateInfoComp(infoCompValue) {
+          var params = {
+              siteCode: nRowData.SITE_CODE,
+              chsu: nRowData.CHSU,
+              INFO_COMP: infoCompValue
+          };
+
+          $.post("/api/BGA040/updateGrid", params, function () {
+              korbiztech.alert("MSG_GRID_SAVE_SUCCESS");
+              viewX.selectGrid();
+          });
+        }
+
+        if (nRowData.CHSU) {
+            if (nRowData.INFO_COMP === "1") {
+                if (confirm("확정취소 하시겠습니까?")) {
+                    updateInfoComp("0");
+                }
+            } else {
+                if (confirm("실행내역을 확정하시겠습니까?")) {
+                    updateInfoComp("1");
+                }
+            }
+        } else {
+            alert("실행내역이 편성되어 있지 않습니다.");
+            return;
+        }
+      }
+    }
+  
+    $(function() {
+      var GRID_PROPERTIES = {
+        grid_01: {
+          parentid: 'SBGridArea_01',
+          id: 'viewX.grid_01',
+          jsonref: 'viewX.gridData_01',
+          rowheader: ['seq'],
+          rowheaderwidth: {seq: '20'},
+          height: '600px',
+          viewWiedh: '800px',
+          selectmode: 'byrow',
+          custompanel: [ "exportToXLSX", "exportToXLS" ],
+          columns: [
+            { caption: ['현장코드'], ref: 'SITE_CODE', width: '140px', style: 'text-align:center', type: 'output' },
+            { caption: ['현장명'], ref: 'SITE_NAME', width: '400px', style: 'text-align:center', type: 'output' },
+            { caption: ['차수'], ref: 'INFO_CHSU', width: '120px', style: 'text-align:center', type: 'output' },
+            { caption: ['확정여부'], ref: 'INFO_COMP', width: '60px', style: 'text-align:center', type: 'checkbox', typeinfo: { checkedvalue: "1", uncheckedvalud: null } }
+          ]
+        }
+      }
+      viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+      viewX.grid_01.bind('click', 'viewX.renamingComp');
+      viewX.grid_01.bind('keydown', 'viewX.renamingComp');
+      viewX.selectGrid();
+    })
+  </script>
+  <style>
+      .grid-container {
+        margin-left: 10px;
+        margin-right: 10px;
+        width: 800px;
+      }
+      #comp {
+        margin-bottom: 10px;
+      }
+  </style>
+  <html>
+    <div class="menuPath-wrap">
+      <div class="menuPath-title"></div>
+    </div>
+    <div class="grid-container">
+      <div id="comp">
+        <sbux-button id="button_comp" name="button_comp" uitype="normal" text="" button-color="blue" is-change-text="true" onClick="viewX.button_compClick()"></sbux-button>
+      </div>
+      <div id="SBGridArea_01"></div>
+    </div>
+  </html>

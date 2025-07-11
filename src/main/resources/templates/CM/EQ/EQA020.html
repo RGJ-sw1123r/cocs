@@ -1,0 +1,77 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        siteJson: [],
+        selectSite: function () {
+            exios.get('/api/EQA020/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+            });
+        },
+        selectGrid: function () {
+            var siteCode = $('#select_site').val();
+            var params = { SITE_CODE: siteCode };
+            exios.get('/api/EQA020/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(gridData_01, false);
+                viewX.grid_01.refresh({'focus': false});
+            });
+        },
+        siteChange: function () {
+            viewX.selectGrid();
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                height: '600px',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                custompanel: [],
+                selectmode: 'byrow',
+                columns: [
+                    { caption: ['사업자번호'], ref: 'MSTR_BIZNO', width: '200px', style: 'text-align:center', type: 'output' },
+                    { caption: ['업체명'], ref: 'DEALR_NM', width: '300px', style: 'text-align:center', type: 'output' },
+                    { caption: ['장비코드'], ref: 'MSTR_ECODE', width: '200px', style: 'text-align:center', type: 'output' },
+                    { caption: ['장비명'], ref: 'ECODE_NAME', width: '400px', style: 'text-align:center', type: 'output' },
+                    { caption: ['규격'], ref: 'ECODE_SIZE', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['단위'], ref: 'ECODE_UNIT', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['장비순번'], ref: 'MSTR_CARNO', width: '200px', style: 'text-align:center', type: 'output' },
+                    { caption: ['보험기간'], ref: 'MSTR_RDATE', width: '300px', style: 'text-align:center', type: 'output' }
+                ]
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectSite();
+        viewX.selectGrid();
+    });
+</script>
+<style>
+    .search-container {
+        margin: 10px;
+    }
+
+    .grid-container {
+        margin: 10px;
+    }
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="search-container">
+        현장명
+        <sbux-select id="select_site" name="select_site" uitype="single"
+            jsondata-ref="viewX.siteJson" jsondata-text="SITE_NAME" jsondata-value="SITE_CODE"
+            onchange="siteChange()">
+        </sbux-select>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</html>

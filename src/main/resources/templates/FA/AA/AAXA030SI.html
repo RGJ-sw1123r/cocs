@@ -1,0 +1,756 @@
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {}, grid_04: {}, grid_05: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {}, gridData_04: {}, gridData_05: {},
+        columnNames: ['ecode_size', 'ecode_unit'],
+        columnInputs: [],
+        selectedRow: '',
+        radioJson: [
+            { id: "1", text: "회계승인", value: "0" },
+            { id: "2", text: "자동승인", value: "1" },
+        ],
+        ynJson: [
+            { id: "1", text: "예", value: "Y" },
+            { id: "2", text: "아니오", value: "N" },
+        ],
+        tabJson: [
+            { id: '0', pid: '-1', order: '1', text: '부서일반정보', targetid: 'tab_01' },
+            { id: '1', pid: '-1', order: '2', text: '현장사업소현황', targetid: 'tab_02' },
+            { id: '2', pid: '-1', order: '3', text: '공동도급사', targetid: 'tab_03' },
+        ],
+        taxJson: [],
+        deptJson: [],
+        costJson: [],
+        gongJson: [],
+        govJson: [],
+
+        gongsaJson: [],
+        bonsaJson: [],
+        taxpayJson: [],
+
+        code: '',
+        dued: '',
+
+        getGridVariables: (tabName) => {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            };
+        },
+        saveGridData: (gridName) => {
+            console.log(gridName + "저장~~~~~~~~~~~~~~~~~~~~~~~~");
+            var variables = viewX.getGridVariables(gridName);
+            var url = '/api/AAXA030SI/' + gridName + '/gridData';
+            console.log(variables.datagridVar)
+            console.log(variables.dataVar)
+            var sendData = viewX[variables.datagridVar].getUpdateData(false, 'all');
+            var addData = {
+                AUNTT_KB: '01',   // 추후 로그인 session 추가 후 수정할 것
+                BUSEO_CD: viewX.gridData_01[viewX.selectedRow].BUSEO_CD
+            };
+            sendData = korbiztech.parse.addPropertiesToData(sendData, addData);
+            console.log(sendData);
+            var checkData = JSON.parse(sendData);
+            var performSave = async function () {
+                try {
+                    const response = await exios.put(url, sendData);
+                    korbiztech.alert('MSG_GRID_SAVE_SUCCESS');
+                    viewX[variables.datagridVar].clearStatus();
+                    viewX.loadGridData(tabName, false);
+                } catch (e) {
+                    korbiztech.alert('MSG_GRID_SAVE_FAIL');
+                    console.error(e);
+                }
+            };
+
+            if (checkData.length > 0) {
+                var primarykey = viewX[variables.datagridVar].primarykey;
+                if (primarykey.length === 1) {
+                    if (!korbiztech.gridAction.checkSingleKey(checkData, variables.dataVar, variables.datagridVar, primarykey[0])) return;
+                } else if (primarykey.length > 1) {
+                    if (!korbiztech.gridAction.checkCompositeKey(checkData, variables.dataVar, variables.datagridVar, primarykey)) return;
+                } else {
+                    korbiztech.alert('MSG_GRID_PK_NOT_DEFINED');
+                    return;
+                }
+                performSave();
+            } else {
+                korbiztech.alert('MSG_GRID_NO_CHANGES');
+            }
+        },
+
+        selectList: () => {
+            dued = $("#DUED_DENY").val();
+            code = $("#code").val();
+            var searchCondition = {
+                code: code,
+                dued: dued,
+                AUNTT_KB: '01'
+            };
+            console.log(searchCondition);
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/AAXA030SI/selectList', searchCondition).then((response) => {
+                viewX.gridData_01 = response.data;
+            }).then(() => {
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.clearStatus();
+                viewX.grid_01.refresh({ 'focus': false });
+                viewX.grid_01.lockGrid(false);
+            }).catch((e) => {
+                console.error(e.responseText);
+            });
+            viewX.jsonList();
+        },
+
+        loadGridData: (gridId, showAlert) => {
+            console.log(gridId);
+            viewX.selectList();
+            viewX.jsonList();
+        },
+
+        getSelectedRows: () => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            exios.get('/api/AAXA030SI/deptList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_04 = response.data;
+            }).then(() => {
+                viewX.grid_04.setGridData(viewX.gridData_04, false);
+                viewX.grid_04.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/empList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_05 = response.data;
+            }).then(() => {
+                viewX.grid_05.setGridData(viewX.gridData_05, false);
+                viewX.grid_05.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/siteList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_02 = response.data;
+            }).then(() => {
+                viewX.grid_02.setGridData(viewX.gridData_02, false);
+                viewX.grid_02.refresh({ 'focus': false });
+            });
+            exios.get('/api/AAXA030SI/subcontList', { code: sel_data.BUSEO_CD }).then((response) => {
+                viewX.gridData_03 = response.data;
+            }).then(() => {
+                viewX.grid_03.setGridData(viewX.gridData_03, false);
+                viewX.grid_03.refresh({ 'focus': false });
+            });
+        },
+        tabEvent: (tabName) => {
+            viewX.selectedRow = parseInt(viewX.grid_01.getSelectedRows()) - 1;
+            var sel_data = viewX.gridData_01[viewX.selectedRow];
+            switch (tabName) {
+                case 'tab_01':
+                    exios.get('/api/AAXA030SI/deptList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_04 = response.data;
+                    }).then(() => {
+                        viewX.grid_04.setGridData(viewX.gridData_04, false);
+                        viewX.grid_04.clearStatus();
+                        viewX.grid_04.refresh({ 'focus': false });
+                    });
+                    exios.get('/api/AAXA030SI/empList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_05 = response.data;
+                    }).then(() => {
+                        viewX.grid_05.setGridData(viewX.gridData_05, false);
+                        viewX.grid_05.clearStatus();
+                        viewX.grid_05.refresh({ 'focus': false });
+                    });
+                    break;
+                case 'tab_02':
+                    exios.get('/api/AAXA030SI/siteList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_02 = response.data;
+                    }).then(() => {
+                        viewX.grid_02.setGridData(viewX.gridData_02, false);
+                        viewX.grid_02.clearStatus();
+                        viewX.grid_02.refresh({ 'focus': false });
+                    });
+                    break;
+                case 'tab_03':
+                    exios.get('/api/AAXA030SI/subcontList', { code: sel_data.BUSEO_CD }).then((response) => {
+                        viewX.gridData_03 = response.data;
+                    }).then(() => {
+                        viewX.grid_03.setGridData(viewX.gridData_03, false);
+                        viewX.grid_03.clearStatus();
+                        viewX.grid_03.refresh({ 'focus': false });
+                    });
+                    break;
+            }
+        },
+
+        jsonList: () => {
+            exios.get('/api/AAXA080SI/selectList').then((response) => {
+                viewX.taxJson = response.data;
+            });
+            exios.get('/api/AAXA120SI/deptList').then((response) => {
+                viewX.deptJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/costList').then((response) => {
+                viewX.costJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/gongList').then((response) => {
+                viewX.gongJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/govList').then((response) => {
+                viewX.govJson = response.data;
+            });
+            exios.get('/api/AAXA030SI/gongsaList').then((response) => {
+                viewX.gongsaJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('GONSA_KB');
+            });
+            exios.get('/api/AAXA030SI/bonsaList').then((response) => {
+                viewX.bonsaJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('COSTT_KB'); // 본사코드 관련 칼럼 찾기
+            });
+            exios.get('/api/AAXA030SI/taxpayList').then((response) => {
+                viewX.taxpayJson = response.data;
+            }).then(() => {
+                SBUxMethod.refresh('VATTT_KB');
+            });
+        },
+        setGubun: (gubun) => {
+            if (!gubun) gubun = '';
+            viewX.gubun = gubun;
+        },
+        selectCode: (event) => {
+            console.log(event.target.id);
+            console.log(event.target.value);
+            var taxleng = viewX.taxJson.length;
+            var deptleng = viewX.deptJson.length;
+            var costleng = viewX.costJson.length;
+            var gongleng = viewX.gongJson.length;
+            var govleng = viewX.govJson.length;
+            switch (event.target.id) {
+                case 'TXSAE_NO':
+                    for (let i = 0; i < taxleng; i++) {
+                        if (event.target.value === viewX.taxJson[i].TXSAE_NO) {
+                            console.log('11111111');
+                            $("#TXSAE_NM").val(viewX.cardJson[i].SAUPJ_NM);
+                            break;
+                        } else {
+                            $("#TXSAE_NM").val('미등록 부가세신고단위');
+                        }
+                    }
+                    break;
+                case 'COSTT_CD':
+                    for (let i = 0; i < costleng; i++) {
+                        if (event.target.value === viewX.costJson[i].ACCNT_CD) {
+                            $("#COSTT_NM").val(viewX.costJson[i].ACCNT_YA);
+                            break;
+                        } else {
+                            $("#COSTT_NM").val('미등록 COST');
+                        }
+                    }
+                    break;
+                case 'GONGG_CD':
+                    for (let i = 0; i < gongleng; i++) {
+                        if (event.target.value === viewX.gongJson[i].SILD_ITEM) {
+                            $("#GONGG_NM").val(viewX.gongJson[i].SILD_NAME);
+                            break;
+                        } else {
+                            $("#GONGG_NM").val('미등록 공종코드');
+                        }
+                    }
+                    break;
+                case 'KWANH_CD':
+                    for (let i = 0; i < govleng; i++) {
+                        if (event.target.value === viewX.govJson[i].GITAA_CD) {
+                            $("#KWANH_NM").val(viewX.govJson[i].GITAA_NM);
+                            break;
+                        } else {
+                            $("#KWANH_NM").val('미등록 관청');
+                        }
+                    }
+                    break;
+                default:
+                    var targetName = event.target.id.replace('_CD', '_NM');
+                    for (let i = 0; i < deptleng; i++) {
+                        if (event.target.value === viewX.deptJson[i].BUSEO_CD) {
+                            $("#" + targetName).val(viewX.bankJson[i].BUSEO_NM);
+                            break;
+                        } else {
+                            $("#" + targetName).val('미등록 부서');
+                        }
+                    }
+                    break;
+            }
+        },
+    };
+
+    $(() => {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '30',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['부서코드'], ref: 'BUSEO_CD', width: '30%', style: 'text-align:center', type: 'output' },
+                    { caption: ['부서명'], ref: 'BUSEO_NM', width: '30%', style: 'text-align:center', type: 'input' },
+                    { caption: ['공사구분'], ref: 'GONSA_KB', width: '15%', style: 'text-align:center', type: 'input' },
+                    { caption: ['종료일'], ref: 'ENDDD_DT', width: '15%', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['승인구분'], ref: 'GIPYO_KB', type: 'input', hidden: true },
+                    { caption: ['부서LEVEL'], ref: 'BUSEO_LV', type: 'input', hidden: true },
+                    { caption: ['부서약어'], ref: 'BUSEO_YA', type: 'input', hidden: true },
+                    { caption: ['부가세신고단위코드'], ref: 'TXSAE_NO', type: 'input', hidden: true },
+                    { caption: ['부가세신고단위'], ref: 'TXSAE_NM', type: 'input', hidden: true },
+                    { caption: ['법인구분'], ref: 'AUNTT_KB', type: 'input', hidden: true },
+                    { caption: ['본사구분'], ref: 'DBANK_NM', type: 'input', hidden: true },
+                    { caption: ['최초사용부서코드'], ref: 'WONSI_CD', type: 'input', hidden: true },
+                    { caption: ['최초사용부서'], ref: 'WONSI_NM', type: 'input', hidden: true },
+                    { caption: ['출납통제부서코드'], ref: 'CHOOL_CD', type: 'input', hidden: true },
+                    { caption: ['출납통제부서'], ref: 'CHOOL_NM', type: 'input', hidden: true },
+                    { caption: ['COST CODE'], ref: 'COSTT_CD', type: 'input', hidden: true },
+                    { caption: ['COST CODE명'], ref: 'COSTT_NM', type: 'input', hidden: true },
+                    { caption: ['COST CODE체크여부'], ref: 'COSTT_YN', type: 'input', hidden: true },
+                    { caption: ['부가세 구분'], ref: 'VATTT_KB', type: 'input', hidden: true },
+                    { caption: ['분양관리여부'], ref: 'HOUSE_KB', type: 'input', hidden: true },
+                    { caption: ['전도금 예외여부'], ref: 'JUNDO_KB', type: 'input', hidden: true },
+                    { caption: ['감가상각공종코드'], ref: 'GONGG_CD', type: 'input', hidden: true },
+                    { caption: ['감가상각공종명'], ref: 'GONGG_NM', type: 'input', hidden: true },
+                    { caption: ['계약일'], ref: 'CONTR_DT', type: 'input', hidden: true },
+                    { caption: ['등록일'], ref: 'SAYNG_ST', type: 'input', hidden: true },
+                    { caption: ['수정일'], ref: 'SDATE_DT', type: 'input', hidden: true },
+                    { caption: ['사용종료일'], ref: 'SAYNG_ED', type: 'input', hidden: true },
+                    { caption: ['현장종료일'], ref: 'SAYN3_ED', type: 'input', hidden: true },
+                    { caption: ['현장준공일'], ref: 'SAYN2_ED', type: 'input', hidden: true },
+                    { caption: ['예산통제여부'], ref: 'PLNCT_KB', type: 'input', hidden: true },
+                    { caption: ['예산통제부서코드'], ref: 'PLNCT_CD', type: 'input', hidden: true },
+                    { caption: ['예산통제부서명'], ref: 'PLNCT_NM', type: 'input', hidden: true },
+                    { caption: ['주소'], ref: 'ADDRE_NY', type: 'input', hidden: true },
+                    { caption: ['관할관청코드'], ref: 'KWANH_CD', type: 'input', hidden: true },
+                    { caption: ['관할관청명'], ref: 'KWANH_NM', type: 'input', hidden: true },
+                ],
+                primarykey: ['CARDD_NO'],
+                custompanel: ['refresh', 'delete', 'add', 'save'],
+            },
+
+            tab_02: {
+                //현장사업소 현황
+                parentid: 'SBGridArea_02',
+                id: 'viewX.grid_02',
+                jsonref: 'viewX.gridData_02',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '20',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '30px', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['구분'], ref: 'DTL5_GBN', width: '80px', style: 'text-align:center', type: 'output' },
+                    { caption: ['세무구분'], ref: 'DTL5_ACCGBN', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['명칭'], ref: 'DTL5_NAME', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['규격'], ref: 'DTL5_SPEC', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['면적'], ref: 'DTL5_AREA', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['용도'], ref: 'DTL5_USE', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['단위'], ref: 'DTL5_UNIT', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['수량'], ref: 'DTL5_QTY', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['단가'], ref: 'DTL5_PRI', width: '80px', style: 'text-align:center', type: 'input' },
+                    { caption: ['금액'], ref: 'DTL5_AMT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['전입일자'], ref: 'DTL5_JDATE', width: '100px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['관청전입신고일'], ref: 'DTL5_BDATE', type: 'input', width: '100px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['전출일자'], ref: 'DTL5_EDATE1', type: 'input', width: '100px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['관청전출신고일'], ref: 'DTL5_EDATE2', type: 'input', width: '100px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['전세권(채권확보)'], ref: 'DTL5_JUNSE', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['권리(채권확보)'], ref: 'DTL5_RIGHT', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['임대인'], ref: 'DTL5_IMDEIN', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['비고'], ref: 'DTL5_BIGOO', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['숙소주소'], ref: 'DTL5_SADDR', width: '100px', style: 'text-align:center', type: 'input' }
+                ],
+                primarykey: ['CARDD_NO'],
+                custompanel: ['refresh', 'delete', 'add', 'save'],
+
+            },
+
+            tab_03: {
+                //공동도급사
+                parentid: 'SBGridArea_03',
+                id: 'viewX.grid_03',
+                jsonref: 'viewX.gridData_03',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['update', 'seq'],
+                selectmode: 'row',
+                entertotab: false,
+                fixedrowheight: '20',
+                mergecellsfixedrows: 'bycolrec',
+                columns: [
+                    { caption: '', ref: 'check', width: '10%', style: 'text-align:center', type: 'checkbox' },
+                    { caption: ['업체코드'], ref: 'SAEOB_NO', width: '20%', style: 'text-align:center', type: 'input' },
+                    { caption: ['업체명'], ref: 'DEALR_NM', width: '50%', style: 'text-align:center', type: 'input' },
+                    { caption: ['지분율(%)'], ref: 'JIBUN_RT', width: '20%', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['CARDD_NO'],
+                custompanel: ['refresh', 'delete', 'add', 'save'],
+
+            },
+            tab_04: {
+                //부서일반정보 > 부서
+                parentid: 'SBGridArea_04',
+                id: 'viewX.grid_04',
+                jsonref: 'viewX.gridData_04',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '20',
+                mergecellsfixedrows: 'bycolrec',
+                disabled: true,
+                columns: [
+                    { caption: ['변경일자'], ref: 'CHDOG_DT', width: '160px', style: 'text-align:center', type: 'input', format: { type: 'date', rule: 'yyyy-mm-dd', origin: 'yyyymmdd' } },
+                    { caption: ['부서코드'], ref: 'IBUSE_CD', width: '160px', style: 'text-align:center', type: 'input' },
+                    { caption: ['부서명'], ref: 'BUSEO_NM', width: '160px', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['IBUSE_CD'],
+            },
+            tab_05: {
+                //부서일반정보 > 작성자
+                parentid: 'SBGridArea_05',
+                id: 'viewX.grid_05',
+                jsonref: 'viewX.gridData_05',
+                backcoloralternate: '#F8F8F8',
+                rowheader: ['seq'],
+                selectmode: 'free',
+                entertotab: false,
+                fixedrowheight: '20',
+                mergecellsfixedrows: 'bycolrec',
+                disabled: true,
+                columns: [
+                    { caption: ['직위코드'], ref: 'CONFI_JW', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['직위명'], ref: 'CONFI_N1', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['사번'], ref: 'CONFI_JN', width: '120px', style: 'text-align:center', type: 'input' },
+                    { caption: ['성명'], ref: 'CONFI_NM', width: '120px', style: 'text-align:center', type: 'input' },
+                ],
+                primarykey: ['LICE_PERMNO'],
+            },
+
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+        viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_03);
+        viewX.grid_04 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_04);
+        viewX.grid_05 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_05);
+        viewX.grid_01.bind('click', 'viewX.getSelectedRows');
+        //viewX.selectList();
+    });
+</script>
+
+<body>
+    <div class="menuPath-wrap">
+        <h3>부서 코드 관리</h3><!-- DNS - 제목 추가 -->
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-tem-contents">
+        <div class="softbowl-form sortbox">
+            <div id="searchEcodeName" class="sortbox_inner">
+                <ul class="sortitem">
+                    <li>
+                        <span id="text">부서코드 :</span>
+                        <sbux-input id="code" name="code" uitype="text" inlength="0" maxlength="20"
+                            wrap-class="sbt-select" onchange="viewX.selectList()"></sbux-input>
+                    </li>
+                    <li>
+                        <span id="text">부서코드 :</span>
+                        <sbux-input id="code" name="code" uitype="text" minlength="0" maxlength="20"
+                            wrap-class="sbt-select" onchange="viewX.selectList()"></sbux-input>
+                    </li>
+                    <li>
+                        <span id="text">종료자료 제외하기 :</span>
+                        <sbux-checkbox id="DUED_DENY" name="DUED_DENY" uitype="normal" text-left-padding="5px"
+                            text-right-padding="25px" true-value="1" false-value="0"
+                            onclick="viewX.selectList()"></sbux-checkbox>
+                    </li>
+                </ul>
+                <div class="sort_btn">
+                    <sbux-button id="selectList" name="btn_norm_2" uitype="normal" text="조회" class="btn_run"
+                        onclick="viewX.selectList(btn_norm_2)"></sbux-button>
+                    <sbux-button id="" name="btn_norm_1" uitype="normal" text="출력" class="btn_run"
+                        onclick=""></sbux-button>
+                </div>
+            </div>
+        </div>
+        <div class="softbowl-grid">
+            <div style="display:flex;">
+                <div id="SBGridArea" style="width:50%;height:800px;float:center;"></div>
+                <div class="sbt-input-tab cocs-tabbox">
+                    <div class="tab-content">
+                        <div id="tab_00" class="gene_info formsheet">
+                            <div class="sbt-tab-wrap">
+                                <div class="sbt-grid">
+                                    <div id="SBGridArea_00">
+                                        <p class="ntc_initial">
+                                            <span>필수 입력 항목</span>
+                                        </p>
+                                        <ul class="ipt_line">
+                                            <li class="initial">
+                                                <label for="BUSEO_CD" id="inner-text">부서코드</label>
+                                                <sbux-input id="BUSEO_CD" name="BUSEO_CD" uitype="text" minlength="0"
+                                                    maxlength="16" grid-id="viewX.grid_01"
+                                                    wrap-class="sbt-select"></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="GIPYO_KB" id="inner-text">승인구분</label>
+                                                <sbux-radio id="GIPYO_KB" name="GIPYO_KB" uitype="normal"
+                                                    jsondata-ref="viewX.radioJson" jsondata-text="text"
+                                                    jsondata-value="value" grid-id="viewX.grid_01"></sbux-radio>
+                                            </li>
+                                            <li>
+                                                <label for="BUSEO_LV" id="inner-text">부서 LEVEL</label>
+                                                <sbux-input id="BUSEO_LV" name="BUSEO_LV" uitype="text"
+                                                    style="width:50px; margin:0px;" minlength="0" maxlength="2"
+                                                    grid-id="viewX.grid_01" wrap-class="sbt-select" oninput=""
+                                                    disabled></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="BUSEO_NM" id="inner-text">부서명</label>
+                                                <sbux-input id="BUSEO_NM" name="BUSEO_NM" uitype="text" minlength="0"
+                                                    maxlength="2" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput=""></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="BUSEO_YA" id="inner-text">부서약어</label>
+                                                <sbux-input id="BUSEO_YA" name="BUSEO_YA" uitype="text" minlength="0"
+                                                    maxlength="12" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput=""></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="TXSAE_NO" id="inner-text">부가세신고단위</label>
+                                                <sbux-input id="TXSAE_NO" name="TXSAE_NO" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="viewX.selectCode(event)"></sbux-input>
+                                                <sbux-input id="TXSAE_NM" name="TXSAE_NM" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="AUNTT_KB" id="inner-text">법인구분(회계단위)</label>
+                                                <sbux-input id="AUNTT_KB" name="AUNTT_KB" uitype="text" minlength="0"
+                                                    maxlength="2" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="" disabled></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="COSTT_KB" id="inner-text">본사구분</label>
+                                                <sbux-select id="COSTT_KB" name="COSTT_KB" uitype="single"
+                                                    jsondata-ref="viewX.bonsaJson" jsondata-text="GITAA_NMS"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_CD"
+                                                    auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" /></sbux-select>
+                                            </li>
+                                            <li>
+                                                <label for="GONSA_KB" id="inner-text">공사구분</label>
+                                                <sbux-select id="GONSA_KB" name="GONSA_KB" uitype="single"
+                                                    jsondata-ref="viewX.gongsaJson" jsondata-text="GITAA_NMS"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_CD"
+                                                    auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" /></sbux-select>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="WONSI_CD" id="inner-text">최초사용부서</label>
+                                                <sbux-input id="WONSI_CD" name="WONSI_CD" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="viewX.selectCode(event)"></sbux-input>
+                                                <sbux-input id="WONSI_NM" name="WONSI_NM" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li>
+                                                <label for="CHOOL_CD" id="inner-text">출납통제부서</label>
+                                                <sbux-input id="CHOOL_CD" name="CHOOL_CD" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="viewX.selectCode(event)"></sbux-input>
+                                                <sbux-input id="CHOOL_NM" name="CHOOL_NM" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="COSTT_CD" id="inner-text">COST CODE</label>
+                                                <sbux-input id="COSTT_CD" name="COSTT_CD" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="viewX.selectCode(event)"></sbux-input>
+                                                <sbux-input id="COSTT_NM" name="COSTT_NM" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li class="noblt col-check">
+                                                <sbux-checkbox id="COSTT_YN" name="COSTT_YN" uitype="normal"
+                                                    text="COST CODE 미체크" text-left-padding="5px"
+                                                    text-right-padding="25px" true-value="1" false-value="0"
+                                                    grid-id="viewX.grid_01" required></sbux-checkbox>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="VATTT_KB" id="inner-text">부가세구분</label>
+                                                <sbux-select id="VATTT_KB" name="VATTT_KB" uitype="single"
+                                                    jsondata-ref="viewX.taxpayJson" jsondata-text="GITAA_NMS"
+                                                    grid-id="viewX.grid_01" jsondata-value="GITAA_CD"
+                                                    auto-unselected-text="true"
+                                                    wrap-class="sbt-inner-select" /></sbux-select>
+                                            </li>
+                                            <li class="noblt col-check">
+                                                <sbux-checkbox id="HOUSE_KB" name="HOUSE_KB" uitype="normal"
+                                                    text="분양관리 여부" text-left-padding="5px" text-right-padding="25px"
+                                                    true-value="Y" false-value="N" grid-id="viewX.grid_01"
+                                                    required></sbux-checkbox>
+                                                <sbux-checkbox id="JUNDO_KB" name="JUNDO_KB" uitype="normal"
+                                                    text="전도금 예외여부" text-left-padding="5px" text-right-padding="25px"
+                                                    true-value="1" false-value="0" grid-id="viewX.grid_01"
+                                                    required></sbux-checkbox>
+                                            </li>
+                                            <li class="noblt col-check"></li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="GONGG_CD" id="inner-text">감가상각공종코드</label>
+                                                <sbux-input id="GONGG_CD" name="GONGG_CD" uitype="text" minlength="0"
+                                                    maxlength="10" grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    oninput="viewX.selectCode(event)"></sbux-input>
+                                                <sbux-input id="GONGG_NM" name="GONGG_NM" uitype="text"
+                                                    style="width:200px; margin:0px;" minlength="0" maxlength="10"
+                                                    grid-id="viewX.grid_01" wrap-class="sbt-select"
+                                                    disabled></sbux-input>
+                                            </li>
+                                            <li class="noblt col-check"></li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="CONTR_DT" id="inner-text">계약일</label>
+                                                <sbux-datepicker id="CONTR_DT" name="CONTR_DT" uitype="popup"
+                                                    grid-id="viewX.grid_01"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="SAYNG_ST" id="inner-text">등록일</label>
+                                                <sbux-datepicker id="SAYNG_ST" name="SAYNG_ST" uitype="popup"
+                                                    grid-id="viewX.grid_01" disabled></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="WRITE_DT" id="inner-text">수정일</label>
+                                                <sbux-datepicker id="WRITE_DT" name="WRITE_DT" uitype="popup"
+                                                    disabled></sbux-datepicker>
+                                            </li>
+                                        </ul>
+                                        <ul class="ipt_line">
+                                            <li>
+                                                <label for="SAYNG_ED" id="inner-text">사용종료일</label>
+                                                <sbux-datepicker id="SAYNG_ED" name="SAYNG_ED" uitype="popup"
+                                                    grid-id="viewX.grid_01"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="SAYN3_ED" id="inner-text">현장종료일</label>
+                                                <sbux-datepicker id="SAYN3_ED" name="SAYN3_ED" uitype="popup"
+                                                    grid-id="viewX.grid_01"></sbux-datepicker>
+                                            </li>
+                                            <li>
+                                                <label for="SAYN2_ED" id="inner-text">현장준공일</label>
+                                                <sbux-datepicker id="SAYN2_ED" name="SAYN2_ED" uitype="popup"
+                                                    grid-id="viewX.grid_01" disabled></sbux-datepicker>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sbt-input-tab">
+                                <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" is-scrollable="false"
+                                    jsondata-ref="viewX.tabJson" title-target-id-array="tab_01^tab_02^tab_03"
+                                    title-text-array="tab_01^tab_02^tab_03" is-close-icon="false"
+                                    onclick="viewX.tabEvent(tab_norm)"></sbux-tabs>
+                                <div class="tab-content">
+                                    <!-- 부서일반정보 -->
+                                    <div id="tab_01" class="gene_info formsheet">
+                                        <div class="sbt-tab-wrap">
+                                            <div class="sbt-grid">
+                                                <ul class="ipt_line">
+                                                    <li>
+                                                        <label for="PLNCT_KB" id="inner-text">예산통제여부</label>
+                                                        <sbux-select id="PLNCT_KB" name="PLNCT_KB" uitype="single"
+                                                            jsondata-ref="viewX.ynJson" jsondata-text="text"
+                                                            grid-id="viewX.grid_01" jsondata-value="value"
+                                                            auto-unselected-text="true"
+                                                            wrap-class="sbt-inner-select" /></sbux-select>
+                                                    </li>
+                                                    <li>
+                                                        <label for="PLNCT_CD" id="inner-text">예산통제부서</label>
+                                                        <sbux-input id="PLNCT_CD" name="PLNCT_CD" uitype="text"
+                                                            minlength="0" maxlength="10" grid-id="viewX.grid_01"
+                                                            wrap-class="sbt-select"
+                                                            oninput="viewX.selectCode(event)"></sbux-input>
+                                                        <sbux-input id="PLNCT_NM" name="PLNCT_NM" uitype="text"
+                                                            minlength="0" maxlength="10" grid-id="viewX.grid_01"
+                                                            wrap-class="sbt-select" disabled></sbux-input>
+                                                    </li>
+                                                </ul>
+                                                <div style="display:flex;align-items:center;">
+                                                    <div id="SBGridArea_04"
+                                                        style="width:50%;height:200px;margin:5px;float:center;">
+                                                    </div>
+                                                    <div id="SBGridArea_05"
+                                                        style="width:50%;height:200px;margin:5px;float:center;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 현장사업소현황 -->
+                                    <div id="tab_02" class="gene_info formsheet">
+                                        <div class="sbt-tab-wrap">
+                                            <div class="sbt-grid">
+                                                <ul class="ipt_line">
+                                                    <li>
+                                                        <label for="ADDRE_NY" id="inner-text">주소지</label>
+                                                        <sbux-input id="ADDRE_NY" name="ADDRE_NY" uitype="text"
+                                                            minlength="0" maxlength="10" grid-id="viewX.grid_01"
+                                                            wrap-class="sbt-select"></sbux-input>
+                                                    </li>
+                                                    <li>
+                                                        <label for="KWANH_CD" id="inner-text">관할관청</label>
+                                                        <sbux-input id="KWANH_CD" name="KWANH_CD" uitype="text"
+                                                            minlength="0" maxlength="10" grid-id="viewX.grid_01"
+                                                            wrap-class="sbt-select"
+                                                            oninput="viewX.selectCode(event)"></sbux-input>
+                                                        <sbux-input id="KWANH_NM" name="KWANH_NM" uitype="text"
+                                                            minlength="0" maxlength="10" grid-id="viewX.grid_01"
+                                                            wrap-class="sbt-select" disabled></sbux-input>
+                                                    </li>
+                                                </ul>
+                                                <div id="SBGridArea_02" style="height:220px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 공동도급사 -->
+                                    <div id="tab_03" class="gene_info formsheet">
+                                        <div class="sbt-tab-wrap">
+                                            <div class="sbt-grid">
+                                                <div id="SBGridArea_03" style="height:250px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>

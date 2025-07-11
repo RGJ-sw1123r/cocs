@@ -1,0 +1,11 @@
+/**
+* 	Layout.css
+*	레이아웃 css
+*/
+@charset "UTF-8";
+
+/*nav*/
+nav.sbux-meu-static-top {
+  background-color: #3972c1;
+  padding-top: 20px;
+}

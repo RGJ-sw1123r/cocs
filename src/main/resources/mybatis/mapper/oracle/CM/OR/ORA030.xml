@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORA030_DAO">
+   
+   <!-- ORA030 협력업체등록정보 전체 조회-->
+   <select id="selectList" parameterType="HashMap" resultType="HashMap">
+                SELECT	CUST_BSNO,											
+						CUST_NAME,											
+						CUST_OWNER, 										
+						CUST_GONG,											
+						CUST_PERM,											
+						CUST_BYY,										
+						CUST_SLNO,											
+						CUST_TYPE,											
+						CUST_ITEM,											
+						CUST_TEL,											
+						CUST_FAX, 											
+						CUST_ZIP, 											
+						CUST_ADDR1,											
+						CUST_ADDR2,											
+						CUST_JZIP, 											
+						CUST_JADDR1, 										
+						CUST_JADDR2,										
+						CUST_MAN,											
+						CUST_CMAN,											
+						CUST_REM, 											
+						CUST_EMAIL,											
+						CUST_HPAGE,											
+						CUST_GUBUN,											
+						CUST_COURSE,										
+						substr(CUST_GONG,1,1) CUST_KGBN,					
+						CUST_USE,											
+						CUST_BANK,											
+						CUST_DEOWN,											
+						CUST_ACCNO,											
+						NVL(CUST_BESTCO, '0') CUST_BESTCO,		
+						CUST_CAPT,											
+						CUST_SNGP,											
+						CUST_JTEL,											
+						CUST_JFAX,											
+						CUST_ECUPDT,										
+						CUST_HTEL											
+			FROM		TOR_CUST	
+			<where>
+    			<if test="CUST_GUBUN != null and CUST_GUBUN != ''">
+        		AND NVL(CUST_GUBUN, '') LIKE '%'|| #{CUST_GUBUN} ||'%'
+    			</if>
+    			<if test="CUST_POST != null and CUST_POST != ''">
+        		AND NVL(CUST_ADDR1, '') LIKE '%'|| #{CUST_POST} ||'%'
+    			</if>
+    			<if test="CUST_NAME != null and CUST_NAME != ''">
+        		AND NVL(CUST_NAME, '') LIKE '%'|| #{CUST_NAME} ||'%'
+    			</if>
+			</where>	
+			ORDER BY CUST_NAME	
+   </select>
+
+   <select id="bankList" parameterType="HashMap" resultType="HashMap">
+					SELECT '(' || GITAA_CD || ')' || ' ' || GITAA_NM AS GITAA_NM,
+							GITAA_NM GITAA_NMS,
+							GITAA_CD
+					FROM AXTB1000
+					WHERE ITEMM_KB ='C38'
+					AND GITAA_CD <![CDATA[<>]]> '***'
+   </select>
+
+   <select id="commList" parameterType="HashMap" resultType="HashMap">
+					SELECT '(' || COMM_LCODE || ')' || ' ' || COMM_LNAME AS COMM_LNAME,
+							COMM_LCODE
+					FROM TOR_COMM 
+			  		 WHERE comm_offc = #{COMM_OFFC}
+			  		 AND comm_gbn = '01'
+			  		 AND COMM_LNAME IS NOT null
+   </select>
+
+   <select id="gongList" parameterType="HashMap" resultType="HashMap">
+				    SELECT 
+			    		'(' || a.GONG_PERM || ')' || ' ' || a.GONG_NAME AS GONG_NAME,
+						a.GONG_CODE AS GONG_CODE,
+			    		a.GONG_PERM AS GONG_PERM, 
+			    		'(' ||  b.PERM_CODE || ')' || ' ' || b.PERM_NAME AS PERM_NAME,
+						b.PERM_NAME AS PREM_NAMES,
+			    		b.PERM_CODE AS PERM_CODE  
+					FROM TOR_GONG a, ADMCON.TOR_PERM b 
+					WHERE a.GONG_PERM  = b.PERM_CODE
+					AND substr(a.GONG_CODE , 1, 1) like '%'||  #{CUST_GONG} ||'%'
+
+   </select>
+
+   <select id="tab02Info" parameterType="HashMap" resultType="HashMap">
+                       	          		  SELECT 								  
+                               LICE_BSNO, 		                
+                               LICE_PERM, 		                
+                               LICE_PERMNO, 	                
+                               LICE_YMD, 		                
+                               LICE_POWER0, 	                
+                               LICE_POWER, 	                
+                              LICE_RANK1, 		                
+                               LICE_RANK2, 		                
+                               LICE_RANK3, 		                
+                               LICE_RANK4, 		                
+                               LICE_CAREER, 	                
+                               LICE_AREA,  		                
+                      			PERM_NAME 
+                        FROM   TOR_LICE, TOR_PERM    
+                       WHERE                 
+                               LICE_BSNO  = #{CUST_BSNO}
+                       AND     LICE_PERM = PERM_CODE(+)
+                      
+                       Order By LICE_BSNO DESC , LICE_PERM DESC  
+   </select>
+
+    <select id="postList" parameterType="HashMap" resultType="HashMap">
+					SELECT AREA_CODE,
+						   AREA_NAME AS AREA_NAMES
+					FROM TOR_AREA	   
+	</select>
+
+   <select id="tab03Info" parameterType="HashMap" resultType="HashMap">
+          			  SELECT 								  
+                               COGO_BSNO, 		                
+                               COGO_LICE, 		                
+                               COGO_SEQ, 	                
+                               COGO_GONG, 		                
+                               COGO_OWNR,
+							   COGO_LICE, 	                
+                               TO_CHAR(COGO_REGDT,'YYYYMMDD') COGO_REGDT, 	                                
+                               COGO_GBN 		                
+                        FROM   TOR_COGO        
+                       WHERE                 
+                               COGO_BSNO = #{CUST_BSNO}  
+                     Order By COGO_SEQ DESC 
+
+   </select>
+
+   <select id="tab04Info" parameterType="HashMap" resultType="HashMap">
+              		SELECT  
+                               SILD_BSNO,   
+                               SILD_SEQ,    
+                               SILD_OWNR,   
+                               SILD_CONNM,  
+                               SILD_PERM,   
+                               SILD_CONTAMT,
+                               SILD_YEAR  	 
+                        FROM   TOR_SILD     
+                       WHERE                
+                               SILD_BSNO = #{CUST_BSNO}                   
+                       Order By SILD_OWNR DESC , SILD_YEAR DESC 
+   </select>
+
+   <select id="tab05Info" parameterType="HashMap" resultType="HashMap">
+         			  SELECT   
+                               ETCD_BSNO,                  
+                               ETCD_SEQ,                  
+                               ETCD_POWNER,                  
+                               ETCD_PNAME,                  
+                               ETCD_PYEAR,                  
+                               ETCD_PREM                   
+                        FROM   TOR_ETCD                 
+                       WHERE                   
+                               ETCD_BSNO  = #{CUST_BSNO}  
+                       Order By ETCD_BSNO DESC , ETCD_SEQ DESC 
+   </select>
+
+   <select id="tab06Info" parameterType="HashMap" resultType="HashMap">
+   	      SELECT CALL_OFFICE HIST_OFFICE, CALL_SITE HIST_SITE, CALL_BNO HIST_BNO, CALL_BSNO HIST_BSNO, 
+	   		                 TO_CHAR(NVL(CALL_BIDDT, NVL(CALL_UPDAY,ORDR_BIDDATE)), 'YYYY') HIST_YMD_YYYY, 
+    		                  TO_CHAR(NVL(CALL_BIDDT, NVL(CALL_UPDAY,ORDR_BIDDATE)), 'MMDD') HIST_YMD_MMDD, 
+			                  SITE_NAME, ORDR_NAME, ORDR_SDATE, ORDR_EDATE,
+			                  ORDR_DOAMT HIST_DOAMT,  ORDR_SIAMT HIST_SILAMT,  CALL_ESTAMT HIST_ESTAMT,  
+					  	      NVL(CONT_CAMT,0) HIST_CONTAMT,  CALL_RANK HIST_RANK, CALL_SYN HIST_YN, '' HIST_REM 
+			            FROM TOR_ORDR, TOR_CALL,  
+			                  (SELECT * FROM TOR_CONT WHERE CONT_CHASU = '0'), 
+					 	      TCT_SITE  
+			            WHERE CALL_BSNO = #{CUST_BSNO}
+				          AND CALL_OFFICE = ORDR_OFFICE 
+				          AND CALL_SITE = ORDR_SITE 
+				          AND CALL_BNO = ORDR_BNO 
+				          AND CALL_OFFICE = CONT_OFFICE (+) 
+				          AND CALL_SITE = CONT_SITE (+) 
+				          AND CALL_BNO = CONT_GNO (+) 
+				          AND CALL_BSNO = CONT_BSNO (+) 
+				          AND CALL_SITE = SITE_CODE  
+				          AND CALL_ESTAMT <![CDATA[> ]]> 0 
+			            ORDER BY NVL(CALL_BIDDT, NVL(CALL_UPDAY,ORDR_BIDDATE)) DESC 
+   </select>
+
+      <select id="tab07Info" parameterType="HashMap" resultType="HashMap">
+	  					  SELECT
+                               REST_BSNO,    
+                               REST_SEQ,     
+                               REST_YMD,     
+                               REST_DESC,     
+                               REST_ORG,     
+                               REST_BIGO     
+                       FROM   TOR_REST      
+                       WHERE                 
+                               REST_BSNO  = #{CUST_BSNO}   
+                       Order By REST_BSNO DESC , REST_YMD DESC 
+	  </select>
+
+	  <insert id="saveTab01InsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+		INTO TOR_CUST
+		(CUST_BSNO, CUST_PASS, CUST_NAME, CUST_OWNER, CUST_GONG, CUST_PERM, CUST_BYY,
+		CUST_SLNO, CUST_TYPE, CUST_ITEM, CUST_TEL, CUST_FAX, CUST_ZIP, CUST_ADDR1,
+		CUST_ADDR2, CUST_JZIP, CUST_JADDR1, CUST_JADDR2, CUST_MAN, CUST_CMAN, CUST_REM,
+		CUST_EMAIL, CUST_HPAGE, CUST_GUBUN, CUST_COURSE, CUST_KGBN, CUST_USE, CUST_BANK,
+		CUST_DEOWN, CUST_ACCNO, CUST_BESTCO, CUST_JTEL, CUST_JFAX, CUST_HTEL)
+		VALUES
+		(
+		 	#{item.CUST_BSNO},
+		 	#{item.CUST_BSNO},
+			#{item.CUST_NAME},
+			#{item.CUST_OWNER},
+			#{item.CUST_GONG},
+			#{item.CUST_PERM},
+			#{item.CUST_BYY},
+			#{item.CUST_SLNO},
+			#{item.CUST_TYPE}, 
+			#{item.CUST_ITEM}, 
+			#{item.CUST_TEL}, 
+			#{item.CUST_FAX}, 
+			 '45673', <!-- #{item.CUST_ZIP},  -->
+			#{item.CUST_ADDR1},
+			#{item.CUST_ADDR2}, 
+			 '45673',<!-- #{item.CUST_JZIP},  -->
+			#{item.CUST_JADDR1}, 
+			#{item.CUST_JADDR2}, 
+			#{item.CUST_MAN}, 
+			'01',<!-- #{item.CUST_CMAN},  -->
+			#{item.CUST_REM},
+			#{item.CUST_EMAIL}, 
+			#{item.CUST_HPAGE}, 
+			#{item.CUST_GUBUN}, 
+			#{item.CUST_COURSE}, 
+			#{item.CUST_KGBN}, 
+			#{item.CUST_USE}, 
+			#{item.CUST_BANK},
+			#{item.CUST_DEOWN}, 
+			#{item.CUST_ACCNO}, 
+			#{item.CUST_BESTCO}, 
+			#{item.CUST_JTEL}, 
+			#{item.CUST_JFAX}, 
+			#{item.CUST_HTEL}
+		)
+		</foreach>
+	SELECT 1 FROM DUAL
+	</insert>
+
+		<insert id="saveTab01_AttachInsertData">
+	  INSERT ALL
+    	<foreach collection="insertList" item="item">
+		INTO AXTB1100
+		(SAEOB_NO, BIYON_KB, DEALR_NM, DEALR_DP, BUPIN_NO, UPTAE_NY, UPJON_NY, TELEP_NO,
+		FAXXX_NO, WOOPY_NO, ADDRE_NY, ADDRE_N2, DAMDA_ID, EMAIL_ID, BANKK_CD, DEPOS_NM,
+		DEPOS_NO, SAEOB_TY)
+		VALUES
+		(
+			#{item.CUST_BSNO},
+			'03',
+			#{item.CUST_NAME},
+			#{item.CUST_OWNER},
+			#{item.CUST_SLNO},
+			#{item.CUST_TYPE},
+			#{item.CUST_ITEM},
+			#{item.CUST_TEL},
+			#{item.CUST_FAX},
+			'45673',<!-- #{item.CUST_ZIP}, -->
+			#{item.CUST_ADDR1},
+			#{item.CUST_ADDR2},
+			#{item.CUST_MAN},
+			#{item.CUST_EMAIL},
+			#{item.CUST_BANK},
+			#{item.CUST_DEOWN},
+			#{item.CUST_ACCNO}, 
+			'S'
+		)
+		</foreach>
+		SELECT 1 FROM DUAL
+		</insert>
+
+
+		<update id="saveTab01UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+			UPDATE TOR_CUST SET
+		 	CUST_BSNO = #{item.CUST_BSNO},
+			CUST_NAME = #{item.CUST_NAME},
+			CUST_OWNER = #{item.CUST_OWNER},
+			CUST_GONG = #{item.CUST_GONG},
+			CUST_PERM = #{item.CUST_PERM},
+			CUST_BYY = #{item.CUST_BYY},
+			CUST_SLNO = #{item.CUST_SLNO},
+			CUST_TYPE = #{item.CUST_TYPE}, 
+			CUST_ITEM = #{item.CUST_ITEM}, 
+			CUST_TEL = #{item.CUST_TEL}, 
+			CUST_FAX = #{item.CUST_FAX}, 
+			CUST_ZIP = '45673', <!-- #{item.CUST_ZIP},  -->
+			CUST_ADDR1 = #{item.CUST_ADDR1},
+			CUST_ADDR2 = #{item.CUST_ADDR2}, 
+			CUST_JZIP = '45673',<!-- #{item.CUST_JZIP},  -->
+			CUST_JADDR1 = #{item.CUST_JADDR1}, 
+			CUST_JADDR2 = #{item.CUST_JADDR2}, 
+			CUST_MAN = #{item.CUST_MAN}, 
+			CUST_CMAN = '01',<!-- #{item.CUST_CMAN},  -->
+			CUST_REM = #{item.CUST_REM},
+			CUST_EMAIL = #{item.CUST_EMAIL}, 
+			CUST_HPAGE = #{item.CUST_HPAGE}, 
+			CUST_GUBUN = #{item.CUST_GUBUN}, 
+			CUST_COURSE = #{item.CUST_COURSE}, 
+			CUST_KGBN = #{item.CUST_KGBN}, 
+			CUST_USE = #{item.CUST_USE}, 
+			CUST_BANK = #{item.CUST_BANK},
+			CUST_DEOWN = #{item.CUST_DEOWN}, 
+			CUST_ACCNO = #{item.CUST_ACCNO}, 
+			CUST_BESTCO = #{item.CUST_BESTCO}, 
+			CUST_JTEL = #{item.CUST_JTEL}, 
+			CUST_JFAX = #{item.CUST_JFAX}, 
+			CUST_HTEL = #{item.CUST_HTEL}
+			WHERE CUST_BSNO = #{item.CUST_BSNO}
+			</foreach>
+		</update>
+		<update id="saveTab01_AttachUpdateData"> 
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE AXTB1100 SET
+				DEALR_NM = #{item.CUST_NAME},	
+				DEALR_DP = #{item.CUST_OWNER},	
+				BUPIN_NO = #{item.CUST_SLNO},	
+				UPTAE_NY = #{item.CUST_TYPE},	
+				UPJON_NY = #{item.CUST_ITEM},
+				TELEP_NO = #{item.CUST_TEL},	
+				FAXXX_NO = #{item.CUST_FAX},	
+				WOOPY_NO = '45673', <!-- #{item.CUST_ZIP},  -->	
+				ADDRE_NY = #{item.CUST_ADDR1},	
+				ADDRE_N2 = #{item.CUST_ADDR2},
+				DAMDA_ID = #{item.CUST_MAN},	
+				EMAIL_ID = #{item.CUST_EMAIL},	
+				BANKK_CD = #{item.CUST_BANK},	
+				DEPOS_NM = #{item.CUST_DEOWN},	
+				DEPOS_NO = #{item.CUST_ACCNO}
+				WHERE SAEOB_NO = #{item.CUST_BSNO}
+			</foreach>
+		</update>
+		<delete id="saveTab01DeleteData">
+			
+				DELETE FROM	TOR_CUST					
+					   <where>
+					   <foreach collection="deleteList" item="item" open="" separator="OR" close="">
+					   ( CUST_BSNO = #{item.CUST_BSNO} )
+					   </foreach>
+					   </where>
+		
+		</delete>
+
+		<insert id="saveTab02InsertData">
+			INSERT ALL
+    		<foreach collection="insertList" item="item">
+				INTO TOR_LICE
+				(LICE_BSNO, LICE_PERM, LICE_PERMNO, LICE_YMD, LICE_POWER0, LICE_POWER,
+				LICE_RANK1, LICE_RANK2, LICE_RANK3, LICE_RANK4, LICE_CAREER, LICE_AREA)
+				VALUES
+				(
+					#{item.LICE_BSNO},
+					#{item.LICE_PERM},
+					#{item.LICE_PERMNO},
+					#{item.LICE_YMD},
+					#{item.LICE_POWER0},
+					#{item.LICE_POWER},
+					#{item.LICE_RANK1},
+					#{item.LICE_RANK2},
+					#{item.LICE_RANK3},
+					#{item.LICE_RANK4},
+					#{item.LICE_CAREER},
+					#{item.LICE_AREA}
+				)
+			</foreach>
+			SELECT 1 FROM DUAL
+		</insert>
+
+		<update id="saveTab02UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE TOR_LICE SET
+					LICE_PERMNO  = #{item.LICE_PERMNO},
+					LICE_YMD = #{item.LICE_YMD},
+					LICE_POWER0 = #{item.LICE_POWER0},
+					LICE_POWER = #{item.LICE_POWER},
+					LICE_RANK1 = #{item.LICE_RANK1},
+					LICE_RANK2 = #{item.LICE_RANK2},
+					LICE_RANK3 = #{item.LICE_RANK3},
+					LICE_RANK4 = #{item.LICE_RANK4},
+					LICE_CAREER = #{item.LICE_CAREER},
+					LICE_AREA = #{item.LICE_AREA}
+				WHERE
+				    LICE_BSNO = #{item.LICE_BSNO}
+				AND
+					LICE_PERM = #{item.LICE_PERM}
+			</foreach>		
+		</update>
+
+		<delete id="saveTab02DeleteData">
+			DELETE FROM	TOR_LICE
+			<where>
+				<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+					(LICE_BSNO = #{item.LICE_BSNO}
+					AND LICE_PERM = #{item.LICE_PERM})
+				</foreach>	
+			</where>
+		</delete>
+
+		<insert id="saveTab03InsertData">
+		INSERT ALL
+    		<foreach collection="insertList" item="item">
+				INTO TOR_COGO
+				(COGO_BSNO, COGO_GBN, COGO_OWNR, COGO_GONG, COGO_REGDT, 
+				COGO_LICE, COGO_SEQ)
+				VALUES
+				(
+					#{item.COGO_BSNO},
+					#{item.COGO_GBN}, 
+					#{item.COGO_OWNR}, 
+					#{item.COGO_GONG}, 
+					#{item.COGO_REGDT},
+					(SELECT GONG_PERM
+							FROM TOR_GONG
+							WHERE GONG_CODE = #{item.COGO_GONG}), 
+					(SELECT NVL(MAX(COGO_SEQ),0)+1
+							FROM TOR_COGO
+							WHERE COGO_BSNO =#{item.COGO_BSNO}
+							AND COGO_LICE =
+							(SELECT GONG_PERM
+							FROM TOR_GONG
+							WHERE GONG_CODE = #{item.COGO_GONG}))
+				)
+			</foreach>
+			SELECT 1 FROM DUAL
+		</insert>
+
+		<update id="saveTab03UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE   TOR_COGO SET
+						COGO_GONG = #{item.COGO_GONG},
+						COGO_OWNR = #{item.COGO_OWNR},
+						COGO_REGDT = #{item.COGO_REGDT},
+						COGO_GBN = #{item.COGO_GBN}
+				WHERE 	COGO_BSNO = #{item.COGO_BSNO}
+				AND     COGO_LICE = #{item.COGO_LICE}
+				AND     COGO_SEQ = #{item.COGO_SEQ}
+			</foreach>
+		</update>
+
+		<delete id="saveTab03DeleteData">
+			DELETE FROM TOR_COGO
+			<where>
+				<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+					(COGO_BSNO = #{item.COGO_BSNO}
+					AND COGO_LICE = #{item.COGO_LICE}
+					AND COGO_SEQ = #{item.COGO_SEQ})
+				</foreach>
+			</where>	
+		</delete>
+
+		<insert id="saveTab04InsertData">
+			INSERT ALL
+    			<foreach collection="insertList" item="item">
+					INTO TOR_SILD
+					(SILD_BSNO, SILD_SEQ, SILD_OWNR, SILD_CONNM, SILD_PERM,
+					SILD_CONTAMT, SILD_YEAR)
+					VALUES
+					(
+						#{item.SILD_BSNO},
+						(SELECT NVL(MAX(SILD_SEQ)+1,0)
+							FROM TOR_SILD
+							WHERE SILD_BSNO = #{item.SILD_BSNO}),
+						#{item.SILD_OWNR},
+						#{item.SILD_CONNM},
+						#{item.SILD_PERM},
+						#{item.SILD_CONTAMT},
+						#{item.SILD_YEAR}
+					)
+				</foreach>
+			SELECT 1 FROM DUAL
+		</insert>
+		<update id="saveTab04UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE   TOR_SILD SET
+					SILD_OWNR = #{item.SILD_OWNR},
+					SILD_CONNM = #{item.SILD_CONNM},
+					SILD_PERM = #{item.SILD_PERM},
+					SILD_CONTAMT = #{item.SILD_CONTAMT},
+					SILD_YEAR = #{item.SILD_YEAR}
+				WHERE 	SILD_BSNO = #{item.SILD_BSNO}
+				AND     SILD_SEQ = #{item.SILD_SEQ}
+			</foreach>	
+		</update>	
+
+		<delete id="saveTab04DeleteData">
+			DELETE FROM TOR_SILD
+				<where>
+					<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+					 (SILD_BSNO = #{item.SILD_BSNO}
+					  AND SILD_SEQ = #{item.SILD_SEQ})
+					</foreach>
+				</where>	  
+		</delete>
+
+		<insert id="saveTab05InsertData">
+			INSERT ALL
+    			<foreach collection="insertList" item="item">
+					INTO TOR_ETCD
+					(ETCD_BSNO, ETCD_SEQ, ETCD_POWNER, ETCD_PNAME,
+					ETCD_PYEAR, ETCD_PREM)
+					VALUES
+					(
+						#{item.ETCD_BSNO},
+						(SELECT NVL(max(ETCD_SEQ)+1,0) 
+							FROM TOR_ETCD 
+							WHERE ETCD_BSNO =#{item.ETCD_BSNO}),
+						#{item.ETCD_POWNER}, 
+						#{item.ETCD_PNAME},
+						#{item.ETCD_PYEAR}, 
+						#{item.ETCD_PREM}
+					)
+					</foreach>
+			SELECT 1 FROM DUAL
+		</insert>	
+
+		<update id="saveTab05UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE TOR_ETCD SET
+					   ETCD_POWNER = #{item.ETCD_POWNER},
+					   ETCD_PNAME = #{item.ETCD_PNAME},
+					   ETCD_PYEAR = #{item.ETCD_PYEAR},
+					   ETCD_PREM = #{item.ETCD_PREM}
+				WHERE  ETCD_BSNO = 	#{item.ETCD_BSNO}
+				AND    ETCD_SEQ = #{item.ETCD_SEQ}
+			</foreach>	   
+		</update>
+
+		<delete id="saveTab05DeleteData">
+			DELETE FROM TOR_ETCD
+				<where>
+					<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+						(ETCD_BSNO = 	#{item.ETCD_BSNO}
+						AND    ETCD_SEQ = #{item.ETCD_SEQ})
+					</foreach>
+				</where>	
+		</delete>
+
+		<insert id="saveTab07InsertData">
+			INSERT ALL
+    			<foreach collection="insertList" item="item">
+					INTO TOR_REST
+					(REST_BSNO, REST_SEQ, REST_YMD, REST_DESC, REST_ORG, REST_BIGO)
+					VALUES
+					(
+						#{item.REST_BSNO}, 
+						(SELECT NVL(MAX(REST_SEQ)+1,0)
+								FROM TOR_REST
+								WHERE REST_BSNO = #{item.REST_BSNO}), 
+						#{item.REST_YMD}, 
+						#{item.REST_DESC}, 
+						#{item.REST_ORG}, 
+						#{item.REST_BIGO}
+					)
+				</foreach>
+				SELECT 1 FROM DUAL	
+		</insert>
+
+		<update id="saveTab07UpdateData">
+			<foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+				UPDATE TOR_REST SET
+					   REST_BSNO = #{item.REST_BSNO}, 
+					   REST_SEQ = #{item.REST_SEQ}, 
+					   REST_YMD = #{item.REST_YMD}, 
+					   REST_DESC = #{item.REST_DESC}, 
+					   REST_ORG = #{item.REST_ORG}, 
+					   REST_BIGO = #{item.REST_BIGO}
+				WHERE  REST_BSNO = #{item.REST_BSNO}
+				AND    REST_SEQ = #{item.REST_SEQ}   
+			</foreach>	
+		</update>
+
+		<delete id="saveTab07DeleteData">
+			DELETE FROM TOR_REST
+				<where>
+					<foreach collection="deleteList" item="item" open="" separator="OR" close="">
+						(REST_BSNO = #{item.REST_BSNO}
+						AND  REST_SEQ = #{item.REST_SEQ})
+					</foreach>
+				</where>	
+		</delete>
+</mapper>   

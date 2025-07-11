@@ -1,0 +1,165 @@
+<script>
+    var viewX = {
+        grid_01: [],
+        gridData_01: [],
+        siteJson: [],
+        chsuJson: [],
+        gubuJson: [],
+        selectSite: function () {
+            exios.get('/api/EQA020/selectSite').then((response) => {
+                viewX.siteJson = response.data;
+                SBUxMethod.refresh('select_site');
+                viewX.selectChsu();
+            });
+        },
+        selectChsu: function () {
+            var siteCode = $('#select_site').val();
+            var params = { SITE_CODE: siteCode };
+            exios.get('/api/BGA060/selectChsu', params).then((response) => {
+                viewX.chsuJson = response.data;
+                SBUxMethod.refresh('select_chsu');
+                viewX.selectGrid();
+            });
+        },
+        selectGubu: function () {
+            exios.get('/api/BGA060/selectGubu').then((response) => {
+                viewX.gubuJson = response.data;
+                SBUxMethod.refresh('select_gubu');
+            });
+        },
+        siteChange: function () {
+            viewX.selectChsu();
+        },
+        chsuChange: function () {
+            viewX.selectGrid();
+        },
+        gubuChange: function () {
+            viewX.selectGrid();
+        },
+        selectGrid: function () {
+            var siteCode = $('#select_site').val();
+            var sildChsu = $('#select_chsu').val();
+            var sildGubu = $('#select_gubu').val();
+            var params = {
+                SITE_CODE: siteCode,
+                SILD_CHSU: sildChsu,
+                SILD_GUBU: sildGubu
+            };
+            viewX.grid_01.lockGrid(true);
+            exios.get('/api/BGA060/selectGrid', params).then((response) => {
+                viewX.gridData_01 = response.data;
+                viewX.grid_01.setGridData(viewX.gridData_01, false);
+                viewX.grid_01.refresh({'focus': false});
+                viewX.grid_01.lockGrid(false);
+            });
+        },
+        button_viewReportClick: function () {
+            // var windowPopup = window.open('', '_blank', 'width=1000,height=600');
+            // windowPopup.document.open();
+            
+            // var gridContent = document.getElementById('SBGridArea_01');
+            // windowPopup.document.write('<html><head><title>인쇄</title></head><body>' + gridContent.innerHTML + '</body></html>');
+            
+            // windowPopup.document.close();
+            // windowPopup.print();
+            // windowPopup.close();
+
+            window.print();
+        },
+    }
+  
+    $(function() {
+        viewX.selectSite();
+        viewX.selectGubu();
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                selectmode: 'byrow',
+                custompanel: [],
+                total: {
+                    type: 'grand',
+                    position: 'top',
+                    columns: {
+                        standard: [0],
+                        sum: [5, 6, 8, 9, 10, 11, 12, 13, 14, 15],
+                    },
+                    grandtotalrow: {
+                        titlecol: 2,
+                        titlevalue: '합계',
+                        style: 'background-color: rgb(146, 178, 197); font-weight: bold; color: rgb(255, 255, 255);',
+                    },
+                },
+                columns: [
+                    { caption: ['코드', '코드'], ref: 'ICODE', width: '100px', style: 'text-align:left', type: 'output' },
+                    { caption: ['명칭', '명칭'], ref: 'INAME', width: '200px', style: 'text-align:left', type: 'output' },
+                    { caption: ['규격', '규격'], ref: 'ISIZE', width: '160px', style: 'text-align:left', type: 'output' },
+                    { caption: ['단위', '단위'], ref: 'IUNIT', width: '60px', style: 'text-align:center', type: 'output' },
+                    { caption: ['도급금액', '도급금액'], ref: 'AMT1', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행금액', '실행금액'], ref: 'AMT2', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['보할', '보할'], ref: 'BOHAL', width: '100px', style: 'text-align:right', type: 'output' },
+                    { caption: ['실행', '재료비'], ref: 'AMT3', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '노무비'], ref: 'AMT4', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '외주재료비'], ref: 'AMT5', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '외주노무비'], ref: 'AMT6', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '외주경비'], ref: 'AMT7', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '장비비'], ref: 'AMT8', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                    { caption: ['실행', '경비'], ref: 'AMT9', width: '140px', style: 'text-align:right', format: { type: "number", rule: "#,###" }, type: 'output' },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        // viewX.selectGrid();
+    })
+</script>
+<style>
+</style>
+<html>
+    <body>
+        <div class="menuPath-wrap">
+            <h3>아이템별집계</h3>
+            <div class="menuPath-title"></div>
+        </div>
+        <div class="softbowl-form sortbox">
+            <span id="text">현장명</span>
+            <sbux-select id="select_site" name="select_site" uitype="single"
+                jsondata-ref="viewX.siteJson"
+                jsondata-text="SITE_NAME"
+                jsondata-value="SITE_CODE"
+                onchange="viewX.siteChange()">
+            </sbux-select>
+            <span id="text">차수</span>
+            <sbux-select id="select_chsu" name="select_chsu" uitype="single"
+                jsondata-ref="viewX.chsuJson"
+                jsondata-text="CHASU"
+                jsondata-value="CHSU"
+                onchange="viewX.chsuChange()">
+            </sbux-select>
+            <sbux-label id="label_comp" name="label_comp" uitype="normal" text="확정" 
+                style="font-size: 14px; font-weight: bold;">
+            </sbux-label>
+            <span id="text">기술구분</span>
+            <sbux-select id="select_gubu" name="select_gubu" uitype="single"
+                jsondata-ref="viewX.gubuJson"
+                jsondata-text="GUBU_NAME"
+                jsondata-value="GUBU_CODE"
+                onchange="viewX.gubuChange()">
+            </sbux-select>
+            <sbux-button id="button_viewReport1" name="button_viewReport1" uitype="normal"
+                text="자원별집계현황" onclick="viewX.button_viewReportClick()"
+                class="btn_print">
+            </sbux-button>
+            <sbux-button id="button_viewReport2" name="button_viewReport2" uitype="normal"
+                text="자원" onclick="viewX.button_viewReportClick()"
+                class="btn_print">
+            </sbux-button>
+        </div>
+        <div class="grid-container">
+            <div id="SBGridArea_01"></div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.OR.dao.ORG020_DAO">
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT GONG_CODE, GONG_NAME, GONG_PERM || '. ' || PERM_NAME AS GONG_PERM
+        FROM TOR_GONG G, TOR_PERM T
+        WHERE G.GONG_PERM = T.PERM_CODE
+        AND SUBSTR(GONG_CODE, 0, 1) = #{GUBUN}
+        ORDER BY GONG_CODE
+    </select>
+
+    <select id="selectGogu" resultType="HashMap">
+        SELECT COMM_GBN, COMM_LCODE, COMM_LCODE || '. ' || COMM_LNAME AS COMM_LNAME
+        FROM TOR_COMM
+        WHERE COMM_OFFC = '01'
+        AND COMM_GBN = '01'
+        AND COMM_LCODE <![CDATA[ <> ]]> '00'
+        AND COMM_MCODE = '00'
+        ORDER BY COMM_GBN
+    </select>
+</mapper>

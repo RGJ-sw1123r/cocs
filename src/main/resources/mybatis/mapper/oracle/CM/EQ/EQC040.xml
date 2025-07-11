@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.CM.EQ.dao.EQC040_DAO">
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT ECODE_CODE ,ECODE_NAME ,ECODE_SIZE ,ECODE_UNIT
+        FROM TEQ_ECODE
+        <if test="ECODE_NAME != null">
+            WHERE ECODE_NAME LIKE '%' || #{ECODE_NAME} || '%'
+        </if>
+        ORDER BY ECODE_NAME
+    </select>
+
+    <update id="saveGrid">
+        <foreach collection="updateList" item="item" separator=";" open="DECLARE BEGIN" close="; END;">
+            UPDATE TEQ_ECODE
+            SET
+                ECODE_NAME = #{item.ECODE_NAME},
+                ECODE_SIZE = #{item.ECODE_SIZE},
+                ECODE_UNIT = #{item.ECODE_UNIT} 
+            WHERE ECODE_CODE = #{item.ECODE_CODE}
+        </foreach>
+    </update>
+
+    <insert id="insertGrid">
+        INSERT ALL
+            <foreach collection="insertList" item="item">
+            INTO TEQ_ECODE
+            (
+                ECODE_CODE,
+                ECODE_NAME,
+                ECODE_SIZE,
+                ECODE_UNIT
+            )
+            VALUES
+            (
+                #{item.ECODE_CODE}, #{item.ECODE_NAME}, #{item.ECODE_SIZE}, #{item.ECODE_UNIT}
+            )
+            </foreach>
+        SELECT 1 FORM DUAL
+    </insert>
+
+    <delete id="deleteGrid">
+        DELETE
+        FROM TEQ_ECODE
+        <where>
+            <foreach collection="deleteList" item="item" open="" close="" separator="OR">
+                (
+                    ECODE_CODE = #{item.ECODE_CODE}
+                )
+            </foreach>
+        </where>
+    </delete>
+
+</mapper>

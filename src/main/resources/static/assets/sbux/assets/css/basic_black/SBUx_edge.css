@@ -1,0 +1,45 @@
+/* 2019-03-08 ahn */
+ul.sbux-tre-bd li.sbux-tre-item-chl-wrap ul.sbux-tre-item-chl-chl:before {
+	top: -9px !important;
+	height: 100% !important;
+}
+
+
+/***********************************************************/
+/* textarea resize */
+/***********************************************************/
+.sbux-resize-wrap {
+	position: relative !important;
+}
+.ui-resizable-se {
+	bottom: 17px;
+}
+.ui-icon-gripsmall-diagonal-se {
+	/*background-position: -64px -224px;*/
+}
+.ui-icon, .ui-widget-content .ui-icon {
+	/*background-image: url(../images/ui-icons_444444_256x240.png);*/
+	background-image: url(../images/resize-icon.png);
+}
+.ui-icon {
+	width: 16px;
+	height: 16px;
+}
+.ui-resizable-se {
+	cursor: se-resize;
+	right: 1px;
+}
+.ui-resizable-handle {
+	position: absolute;
+	font-size: 0.1px;
+	display: block;
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.ui-icon {
+	vertical-align: middle;
+	margin-top: -.25em;
+	text-indent: -99999px;
+	overflow: hidden;
+	background-repeat: no-repeat;
+}

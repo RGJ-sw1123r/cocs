@@ -1,0 +1,30 @@
+package com.korbiztech.product.cocs.CM.OR.restController;
+
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.korbiztech.product.cocs.CM.OR.service.ORA010_Service;
+
+import jakarta.annotation.Resource;
+
+@RestController
+@RequestMapping("/api/ORA010")
+public class ORA010_RestController {
+    
+    @Resource(name = "ORA010_Service")
+    private ORA010_Service oraService;
+
+    @GetMapping("/selectYear")
+    public List<HashMap<String, ?>> selectYear() {
+        return oraService.selectYear();
+    }
+
+    @GetMapping("/selectGrid")
+    public List<HashMap<String, ?>> selectGrid() {
+        return oraService.selectGrid();
+    }
+}

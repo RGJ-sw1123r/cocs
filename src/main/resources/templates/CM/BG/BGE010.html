@@ -1,0 +1,189 @@
+<script>
+    var viewX = {
+        grid_01: {}, grid_02: {}, grid_03: {},
+        gridData_01: {}, gridData_02: {}, gridData_03: {},
+        gubuJson: [], lgojJson: [],
+        TAB_PROPERTIES: [
+            { id: '0', pid: '-1', order: '1', text: '기술구분', targetid: 'tab_01'},
+            { id: '1', pid: '-1', order: '2', text: '대공종', targetid: 'tab_02'},
+            { id: '2', pid: '-1', order: '3', text: '중공종', targetid: 'tab_03'},
+        ],
+        moveTab: function (tabName) {
+            this.loadGridData(tabName.toLowerCase());
+        },
+        getGridVariables: function (tabName) {
+            var index = tabName ? tabName.split('_')[1] : '01';
+            var dataVar = 'gridData_' + index;
+            var datagridVar = 'grid_' + index;
+            return {
+                dataVar: dataVar,
+                datagridVar: datagridVar
+            }
+        },
+        loadGridData: function (tabName, changeEvent) {
+            var variables = viewX.getGridVariables(tabName);
+            var url = '/api/BGE010/' + tabName + '/gridData';
+            var params = {};
+            
+            if (!changeEvent) {
+                viewX.selectGubu('select_gubu_01');
+                viewX.selectGubu('select_gubu_02');
+                viewX.selectLgoj();
+            }
+
+            switch (tabName) {
+                case 'tab_01':
+                    break;
+                case 'tab_02':
+                    params.GUBU = $('#select_gubu_01').val();
+
+                    var GRID_PROPERTIES = {
+                        tab_02: {
+                            parentid: 'SBGridArea_02',
+                            id: 'viewX.grid_02',
+                            jsonref: 'viewX.gridData_02',
+                            rowheader: ['update', 'seq'],
+                            height: '480px',
+                            custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                            primarykey: ['LGOJ_CODE'],
+                            columns: [
+                                { caption: ['코드'], ref: 'LGOJ_CODE', width: '100px', style: 'text-align:center', type: 'input' },
+                                { caption: ['명칭'], ref: 'LGOJ_NAME', width: '300px', style: 'text-align:left', type: 'input' },
+                            ]
+                        }
+                    }
+                    viewX.grid_02 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_02);
+                    break;
+                case 'tab_03':
+                    params.GUBU = $('#select_gubu_02').val();
+                    params.LGOJ = $('#select_lgoj').val();
+
+                    var GRID_PROPERTIES = {
+                        tab_03: {
+                            parentid: 'SBGridArea_03',
+                            id: 'viewX.grid_03',
+                            jsonref: 'viewX.gridData_03',
+                            rowheader: ['update', 'seq'],
+                            height: '480px',
+                            custompanel: ['exportExcel', 'refresh', 'add', 'delete', 'save'],
+                            primarykey: ['MGOJ_CODE'],
+                            columns: [
+                                { caption: ['코드'], ref: 'MGOJ_CODE', width: '100px', style: 'text-align:center', type: 'input' },
+                                { caption: ['명칭'], ref: 'MGOJ_NAME', width: '300px', style: 'text-align:left', type: 'input' },
+                            ]
+                        }
+                    }
+                    viewX.grid_03 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_03);
+                    break;
+            }
+            
+            viewX[variables.datagridVar].clearStatus();
+            viewX[variables.datagridVar].lockGrid(true);
+
+            exios.get(url, params, {}).then((response) => {
+                const resultData = response.data;
+                viewX[variables.dataVar] = resultData;
+                viewX[variables.datagridVar].setGridData(viewX[variables.dataVar], true);
+                // viewX[variables.datagridVar].refresh({'focus': false});
+                korbiztech.gridAction.disablePrimaryKeyCells(variables.datagridVar);
+                viewX[variables.datagridVar].lockGrid(false);
+            }). catch((error) => {
+                korbiztech.alert('MSG_GRID_GET_FAIL');
+                viewX[variables.datagridVar].lockGrid(false);
+            });
+
+        },
+        saveGridData: function () {
+            // 그리드 데이터 저장 로직 추가 필요(C, U, D)
+        },
+        selectGubu: function (select_gubu) {
+            exios.get('/api/BGE010/tab_01/gridData').then((response) => {
+                viewX.gubuJson = response.data;
+                SBUxMethod.refresh(select_gubu);
+            });
+        },
+        selectLgoj: function () {
+            exios.get('/api/BGE010/tab_02/gridData').then((response) => {
+                viewX.lgojJson = response.data;
+                SBUxMethod.refresh('select_lgoj');
+            });
+        },
+        gubuChange_01: function () {
+            var changeEvent = true;
+            viewX.loadGridData('tab_02', changeEvent);
+        },
+        gubuChange_02: function () {
+            var changeEvent = true;
+            viewX.loadGridData('tab_03', changeEvent);
+        },
+        lgojChange: function () {
+            var changeEvent = true;
+            viewX.loadGridData('tab_03', changeEvent);
+        }
+    }
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            tab_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['update', 'seq'],
+                height: '480px',
+                custompanel: ['template', 'exportExcel', 'refresh', 'add', 'delete', 'save'],
+                primarykey: ['GUBU_CODE'],
+                columns: [
+                    { caption: ['코드'], ref: 'GUBU_CODE', width: '100px', style: 'text-align:center', type: 'input' },
+                    { caption: ['명칭'], ref: 'GUBU_NAME', width: '300px', style: 'text-align:left', type: 'input' },
+                    { caption: ['매출구분'], ref: 'GUBU_GBN', width: '200px', style: 'text-align:left', type: 'input' },
+                ]
+            }
+        };
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.tab_01);
+        viewX.loadGridData('tab_01');
+    });
+</script>
+<style>
+</style>
+<html>
+    <div class="menuPath-wrap">
+        <h3>표준공종등록</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="tab-container cocs-tabbox">
+        <!-- SBUx tab component -->
+        <sbux-tabs id="idxTab_norm" name="tab_norm" uitype="normal" jsondata-ref="viewX.TAB_PROPERTIES"
+            title-target-id-array="tab_01^tab_02^tab_03" title-text-array="tab_01^tab_02^tab_03"
+            is-close-icon="false" is-scrollable="false" is-draggable="false" onclick="viewX.moveTab(tab_norm)">
+        </sbux-tabs>
+
+        <div class="tab-content">
+            <div id="tab_01">
+                <div id="SBGridArea_01"></div>
+            </div>
+
+            <div id="tab_02">
+                기술구분
+                <sbux-select id="select_gubu_01" name="select_gubu_01" uitype="single"
+                    jsondata-ref="viewX.gubuJson" jsondata-text="GUBU_NAME" jsondata-value="GUBU_CODE"
+                    onchange="viewX.gubuChange_01()">
+                </sbux-select>
+                <div id="SBGridArea_02"></div>
+            </div>
+            
+            <div id="tab_03">
+                기술구분
+                <sbux-select id="select_gubu_02" name="select_gubu_02" uitype="single"
+                    jsondata-ref="viewX.gubuJson" jsondata-text="GUBU_NAME" jsondata-value="GUBU_CODE"
+                    onchange="viewX.gubuChange_02()">
+                </sbux-select>
+                대공종
+                <sbux-select id="select_lgoj" name="select_lgoj" uitype="single"
+                    jsondata-ref="viewX.lgojJson" jsondata-text="LGOJ_NAME" jsondata-value="LGOJ_CODE"
+                    onchange="viewX.lgojChange()">
+                </sbux-select>
+                <div id="SBGridArea_03"></div>
+            </div>
+        </div>
+    </div>
+</html>

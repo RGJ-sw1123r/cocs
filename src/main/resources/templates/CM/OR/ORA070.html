@@ -1,0 +1,64 @@
+<script>
+    var viewX = {
+        grid_01: {},
+        gridData_01: {},
+        yearJson: Array.from({ length: 2023 - 2004 + 1 }, (_, index) => ({ text: (2004 + index).toString(), value: 2004 + index })),
+        selectGrid: function() {
+            
+        }
+    };
+
+    $(function() {
+        var GRID_PROPERTIES = {
+            grid_01: {
+                parentid: 'SBGridArea_01',
+                id: 'viewX.grid_01',
+                jsonref: 'viewX.gridData_01',
+                rowheader: ['seq'],
+                rowheaderwidth: {seq: '20'},
+                height: '600px',
+                explorerbar: 'sort',
+                custompanel: [],
+                columns: [
+                { caption: ['등록공종'], ref: 'BASE_GONG', width: '80px', style: 'text-align:center', type: 'output', hidden: true },
+                    { caption: ['기술구분'], ref: 'GISUL_GUBU', width: '80px', style: 'text-align:center', type: 'output' },
+                    { caption: ['등록공종'], ref: 'GONG_NAME', width: '100px', style: 'text-align:center', type: 'output' },
+                    { caption: ['사업자번호'], ref: 'BASE_BSNO', width: '100px', style: 'text-align:center', type: 'output', sortable : false },
+                    { caption: ['업체명'], ref: 'BASE_NAME', width: '180px', style: 'text-align:left', type: 'output' },
+                    { caption: ['기술부문(45)'], ref: 'BASE_JUMSU1', width: '100px', style: 'text-align:right', type: 'output', sortable : false },
+                    { caption: ['재무부문(30)'], ref: 'BASE_JUMSU2', width: '100px', style: 'text-align:right', type: 'output', sortable : false },
+                    { caption: ['품질관리(25)'], ref: 'BASE_JUMSU3', width: '100px', style: 'text-align:right', type: 'output', sortable : false },
+                    { caption: ['합계(100)'], ref: 'BASE_TOTAL', width: '100px', style: 'text-align:right', type: 'output', sortable : false },
+                    { caption: ['등록여부'], ref: 'BASE_TEMP', width: '80px', style: 'text-align:center', type: 'output', sortable : false },
+                    { caption: ['추천자'], ref: 'BASE_TEMP', width: '80px', style: 'text-align:left', type: 'output', sortable : false },
+                    { caption: ['비고'], ref: 'BASE_TEMP', width: '100px', style: 'text-align:left', type: 'output', sortable : false },
+                ]
+            }
+        }
+        viewX.grid_01 = korbiztech.grid.createGrid(GRID_PROPERTIES.grid_01);
+        viewX.selectGrid();
+    });
+</script>
+<style>
+</style>
+<body>
+    <div class="menuPath-wrap">
+        <h3>신규업체평가표</h3>
+        <div class="menuPath-title"></div>
+    </div>
+    <div class="softbowl-form sortbox">
+        평가년도
+        <sbux-select id="select_year" name="select_year" uitype="single"
+            jsondata-ref="viewX.yearJson" onchange="viewX.yearChange()">
+        </sbux-select>
+        <sbux-button id="button_comp" name="button_comp" uitype="normal" text="출력"
+            onClick="">
+        </sbux-button>
+        <sbux-button id="button_comp" name="button_comp" uitype="normal" text="전체출력"
+            onClick="">
+        </sbux-button>
+    </div>
+    <div class="grid-container">
+        <div id="SBGridArea_01"></div>
+    </div>
+</body>

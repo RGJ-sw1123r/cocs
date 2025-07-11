@@ -1,0 +1,27 @@
+/* 2019-03-08 ahn */
+ul.sbux-tre-bd li.sbux-tre-item-chl-wrap ul.sbux-tre-item-chl-chl:before {
+	top: -9px !important;
+	height: 100% !important;
+}
+
+/***********************************************************/
+/* fileupload, cancel, delete
+/***********************************************************/
+.fa-times, .fa-trash-alt, .fa-angle-left, .fa-angle-double-down, .fa-angle-double-left, .fa-angle-double-right,
+.fa-angle-double-up, .fa-angle-down, .fa-angle-left, .fa-angle-right, .fa-angle-up, .fa-plus,
+.fa-minus, .fa-upload, .fa-copy, .fa-times, .fa-exclamation-circle, .fa-trash-alt, .fa-search,
+.fa-sort-down, .fa-check, .fa-ellipsis-v, .fa-bars
+ {
+	text-rendering: optimizeLegibility;
+ }
+
+
+/***********************************************************/
+/* listbox height */
+/***********************************************************/
+.sbux-lis {
+	height: 90px;
+}
+
+
+.sbux-pik-daterange .sbux-pik-wrap .sbux-pik-date {margin:initial;}

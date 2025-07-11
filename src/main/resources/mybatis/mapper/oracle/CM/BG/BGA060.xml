@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGA060_DAO">
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_EQ = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_EQ = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+    
+    <select id="selectChsu" parameterType="HashMap" resultType="HashMap">
+        SELECT INFO_CHSU CHSU, INFO_CHSU || '차' CHASU, INFO_COMP COMP, INFO_APPFILE, INFO_FILEPATH
+        FROM TBG_INFO
+        WHERE INFO_OFFICE = '01'
+        AND INFO_SITE = #{SITE_CODE}
+        ORDER BY CHSU DESC
+    </select>
+
+    <select id="selectGubu" resultType="HashMap">
+        SELECT GUBU_CODE, GUBU_CODE || '. ' || GUBU_NAME GUBU_NAME, GUBU_GBN
+        FROM TBG_GUBU
+        ORDER BY GUBU_CODE
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT SILD_OFFICE, SILD_SITE, SILD_CHSU, ICODE, ISIZE, IUNIT, AMT1, AMT2
+            , ROUND(AMT2 / DECODE(SILSUM, 0, NULL, SILSUM) * 100, 2) BOHAL, AMT3, AMT4, AMT5, AMT6, AMT7, AMT8, AMT9, INAME
+        FROM (
+            SELECT SILD_OFFICE, SILD_SITE, SILD_CHSU, SILD_ITEM ICODE, ITEM_SIZE ISIZE, ITEM_UNIT IUNIT
+            , SILD_DAMT AMT1, SILD_SAMT AMT2, SILD_SMAMT AMT3, SILD_SLAMT AMT4, SILD_SOMAMT AMT5
+            , SILD_SOLAMT AMT6, SILD_SOAAMT AMT7, SILD_SEAMT AMT8, SILD_SAAMT AMT9, ITEM_NAME INAME
+            FROM TBG_SILD, TBG_ITEM
+            WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{SITE_CODE}
+            AND SILD_CHSU = #{SILD_CHSU}
+            AND SILD_GUBU = #{SILD_GUBU}
+            AND SILD_ITEM = ITEM_CODE(+)
+            ) A,
+            (
+            SELECT SUM(SILD_SAMT) SILSUM
+            FROM TBG_SILD
+            WHERE SILD_OFFICE = '01'
+            AND SILD_SITE = #{SITE_CODE}
+            AND SILD_CHSU = #{SILD_CHSU}
+            GROUP BY SILD_OFFICE, SILD_SITE, SILD_CHSU
+            ) B
+        ORDER BY ICODE
+    </select>
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+	
+<mapper namespace="com.korbiztech.product.cocs.COM.dao.Menu_DAO">
+
+    <select id="getMenuList" parameterType="String" resultType="HashMap">
+    	  SELECT PROGM_ID
+    	       , UPMUU_KB
+    	       , PROGM_NM
+    	       , PROGM_SQ
+    	       , PROGM_LV
+    	       , SYSTM_KB
+    	    FROM SYTB0200
+    	   WHERE SYSTM_KB != 'BS'
+    	     AND SYSTM_KB != 'FZ'
+    	ORDER BY TO_NUMBER(PROGM_LV), TO_NUMBER(PROGM_SQ)
+    </select>
+    
+</mapper>

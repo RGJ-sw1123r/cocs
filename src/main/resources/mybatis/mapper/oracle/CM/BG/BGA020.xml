@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.korbiztech.product.cocs.CM.BG.dao.BGA020_DAO">
+
+    <select id="selectSite" resultType="HashMap">
+        SELECT A.SITE_CODE,
+            '(' || A.SITE_CODE || ') ' || A.SITE_NAME AS SITE_NAME,
+            A.SITE_COMMYN,
+            MAX(INFO_CHSU) CFM_CHSU
+        FROM TCT_SITE A, TBG_INFO B
+        WHERE A.SITE_OFFICE = '01'
+        AND A.SITE_USEYN = '1'
+        AND B.INFO_COMP(+) = '1'
+        AND A.SITE_OFFICE = B.INFO_OFFICE(+)
+        AND A.SITE_CODE = B.INFO_SITE(+)
+        AND SITE_CODE IN (
+            SELECT AVBUJ_CD FROM SYTB0110
+            WHERE USERS_ID = 'admin'
+            AND GUNHA_BG = '1'
+            UNION ALL
+            SELECT SITE_CODE FROM TCT_SITE
+            WHERE EXISTS (SELECT 1 FROM SYTB0110
+                WHERE USERS_ID = 'admin'
+                AND GUNHA_BG = '1'
+                AND AVBUJ_CD = '*****')
+            )
+        GROUP BY A.SITE_CODE, A.SITE_NAME, A.SITE_COMMYN
+    </select>
+    
+    <select id="selectGubu" resultType="HashMap">
+        SELECT '0' GUBU_CODE, '전체' GUBU_NAME, NULL GUBU_GBN
+        FROM DUAL
+        UNION ALL
+        SELECT GUBU_CODE, GUBU_CODE || '. ' || GUBU_NAME GUBU_NAME, GUBU_GBN
+        FROM TBG_GUBU
+        WHERE GUBU_GBN = '1'
+        ORDER BY GUBU_CODE
+    </select>
+
+    <select id="selectChsu" parameterType="HashMap" resultType="HashMap">
+        SELECT NVL(MAX(INFO_CHSU), 0) + 1 CHSU, B.SITE_DOAMT, B.SITE_SIAMT, B.SITE_DOYN, MIN(C.GOGU_CODE) GOGU_CODE
+        FROM TBG_INFO A, TCT_SITE B, TBG_GOGU C
+        WHERE B.SITE_OFFICE = '01'
+            AND SITE_CODE = #{SITE_CODE}
+            AND INFO_COMP(+) = '1'
+            AND A.INFO_OFFICE(+) = B.SITE_OFFICE
+            AND A.INFO_SITE(+) = B.SITE_CODE
+            AND C.GOGU_OFFICE(+) = B.SITE_OFFICE
+            AND C.GOGU_SITE(+) = B.SITE_CODE
+        GROUP BY B.SITE_DOAMT, B.SITE_SIAMT, B.SITE_DOYN
+    </select>
+
+    <select id="selectGrid" parameterType="HashMap" resultType="HashMap">
+        SELECT A.SILD_GUBU, A.SILD_GOGU, A.SILD_LGOJ, A.SILD_MGOJ, A.SILD_ITEM, B.ITEM_EMS
+            , DECODE(B.ITEM_CODE, NULL, A.SILD_NAME, B.ITEM_NAME) ITEM_NAME
+            , DECODE(B.ITEM_CODE, NULL, A.SILD_SIZE, B.ITEM_SIZE) ITEM_SIZE
+            , DECODE(B.ITEM_CODE, NULL, A.SILD_UNIT, B.ITEM_UNIT) ITEM_UNIT, SILD_SIK
+            , SILD_DQTY, SILD_DPRI, SILD_DAMT, SILD_DMPRI, SILD_DMAMT, SILD_DLPRI, SILD_DLAMT, SILD_DAPRI, SILD_DAAMT
+            , SILD_SQTY, SILD_SPRI, SILD_SAMT, SILD_SMPRI, SILD_SMAMT, SILD_SLPRI, SILD_SLAMT, SILD_SOMPRI, SILD_SOMAMT
+            , SILD_SOLPRI, SILD_SOLAMT, SILD_SOAPRI, SILD_SOAAMT, SILD_SEPRI, SILD_SEAMT, SILD_SAPRI, SILD_SAAMT, SILD_SEQ
+        FROM TBG_SILD A, TBG_ITEM B
+        WHERE A.SILD_OFFICE = '01'
+            AND A.SILD_SITE = #{SITE_CODE}
+            AND A.SILD_CHSU = #{CHSU}
+            <if test='GUBU_CODE != "0"'>
+                AND A.SILD_GUBU LIKE '%' || #{GUBU_CODE} || '%'
+            </if>
+            AND A.SILD_ITEM = B.ITEM_CODE(+)
+        ORDER BY A.SILD_GOGU, A.SILD_LGOJ, A.SILD_MGOJ, A.SILD_ITEM
+    </select>
+</mapper>

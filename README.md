@@ -62,8 +62,8 @@ COCS 프로젝트는 단순한 CRUD를 넘어서, '전체 사이클을 통제 �
 COCS 구조는 아래 예제 HTML 파일들에서 확인할 수 있습니다.  
 마크업 파일마다 `viewX` 객체가 선언되어 있으며, 각 화면에 필요한 초기화 로직 및 이벤트 핸들링이 포함되어 있습니다.
 
-- [`BGA030.html`](https://github.com/RGJ-sw1123r/cocs/blob/master/src/main/resources/templates/BGA030.html) – 품의/결재 내역 화면 예시
-  - `viewX`를 통해 화면 로딩 시 그리드 초기화, 버튼 액션, 권한 바인딩이 자동 연결됩니다.
+- [`BGA030.html`](https://github.com/RGJ-sw1123r/cocs/blob/master/src/main/resources/templates/CM/BG/BGA030.html) – 실행내역편성 대표 화면 예시
+  - 트리, 다중 그리드, 파일 업로드, 모달(`BGA031 ~ BGA034`)을 포함한 화면으로 실제 업무 흐름이 가장 많이 반영된 예시입니다.
 
 📄 [`BGA030_Service.java`](https://github.com/RGJ-sw1123r/cocs/blob/master/src/main/java/com/korbiztech/product/cocs/CM/BG/service/BGA030_Service.java)  
 해당 Java 서비스 클래스는 Grid 저장 로직, 파일 업로드, 트리 데이터 조회 등 주요 서버 비즈니스 로직을 처리합니다.
@@ -186,3 +186,12 @@ exios는 axios 스타일의 커스텀 HTTP 유틸리티로, 요청 취소 토큰
 정해진 일정과 요구사항 안에서도 유연하게 대응할 수 있는 실전형 개발자이기도 합니다.
 
 요약하자면, **"사고하는 손"을 가진 손발입니다.** 🧠
+
+---
+
+## 📝 문서 작업 이력
+
+- **2026-03-26**
+  - README를 포트폴리오 목적에 맞게 정비했습니다.
+  - 대표 화면 링크를 실제 경로 기준으로 바로잡고 설명 구조를 수정했습니다.
+  - 문서 품질 검증(링크 정합성 점검)은 OpenAI Codex와의 협업으로 진행했습니다.

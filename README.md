@@ -62,13 +62,13 @@ COCS 프로젝트는 단순한 CRUD를 넘어서, '전체 사이클을 통제 �
 COCS 구조는 아래 예제 HTML 파일들에서 확인할 수 있습니다.  
 마크업 파일마다 `viewX` 객체가 선언되어 있으며, 각 화면에 필요한 초기화 로직 및 이벤트 핸들링이 포함되어 있습니다.
 
-- [`BGA030.html`](https://github.com/RGJ-sw1123r/cocs/blob/master/src/main/resources/templates/CM/BG/BGA030.html) – 실행내역편성 대표 화면 예시
+- [`BGA030.html`](https://github.com/revertable/cocs/blob/master/src/main/resources/templates/CM/BG/BGA030.html) – 실행내역편성 대표 화면 예시
   - 트리, 다중 그리드, 파일 업로드, 모달(`BGA031 ~ BGA034`)을 포함한 화면으로 실제 업무 흐름이 가장 많이 반영된 예시입니다.
 
-📄 [`BGA030_Service.java`](https://github.com/RGJ-sw1123r/cocs/blob/master/src/main/java/com/korbiztech/product/cocs/CM/BG/service/BGA030_Service.java)  
+📄 [`BGA030_Service.java`](https://github.com/revertable/cocs/blob/master/src/main/java/com/korbiztech/product/cocs/CM/BG/service/BGA030_Service.java)  
 해당 Java 서비스 클래스는 Grid 저장 로직, 파일 업로드, 트리 데이터 조회 등 주요 서버 비즈니스 로직을 처리합니다.
 
-📂 [🔗 Static JS 디렉토리 바로가기](https://github.com/RGJ-sw1123r/cocs/tree/master/src/main/resources/static/js) 
+📂 [🔗 Static JS 디렉토리 바로가기](https://github.com/revertable/cocs/tree/master/src/main/resources/static/js) 
 해당 디렉토리에 포함된 유틸리티 파일들은 단순한 보조 도구를 넘어서, 프로젝트 내에서 프레임워크의 구조적 역할을 수행하도록 설계되었습니다.
 
 ---
